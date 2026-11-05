@@ -5,6 +5,7 @@ import { ArrowUpRight, Moon, Sun } from "lucide-react";
 
 const NAV = [
   { href: "#departments", label: "Calculator" },
+  { href: "#report", label: "PDF report" },
   { href: "#grading", label: "Grading" },
   { href: "https://papers.arict.lk", label: "Past Papers", external: true },
 ];

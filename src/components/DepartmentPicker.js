@@ -1,14 +1,17 @@
 "use client";
 
-import { ArrowDown, Atom, Check, FlaskConical, HeartPulse, Laptop, Leaf } from "lucide-react";
+import { useState } from "react";
+import { ArrowDown, Atom, Check, FileUp, FlaskConical, HeartPulse, Laptop, Leaf } from "lucide-react";
 import { buildCourses, computeGpa, formatGpa } from "@/lib/gpa";
 import { EMPTY_DEPT_DATA } from "@/lib/storage";
+import RestoreButton from "./RestoreButton";
 
 const ICONS = { bio: Leaf, chem: FlaskConical, it: Laptop, hp: HeartPulse, phy: Atom };
 
 // The first thing a student does, so it sits in the hero as a framed panel with a step marker.
-export default function DepartmentPicker({ departments, selected, onSelect, data, ready }) {
+export default function DepartmentPicker({ departments, selected, onSelect, onRestore, data, ready }) {
   const waiting = ready && !selected;
+  const [message, setMessage] = useState(null);
 
   return (
     <div id="departments" className="relative scroll-mt-24">
@@ -99,11 +102,27 @@ export default function DepartmentPicker({ departments, selected, onSelect, data
             );
           })}
         </div>
-      </div>
 
-      {selected && (
-        <p className="mt-4 text-center text-[12.5px] text-muted">Your grades are kept separately for each department.</p>
-      )}
+        {/* Restore lives here too, so a student whose browser data was cleared can get it back before choosing. */}
+        <div className="flex flex-col gap-3 px-3 pt-4 pb-2 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+          <p
+            role="status"
+            className={`text-[13px] ${message ? (message.tone === "error" ? "font-medium text-brand" : "font-medium text-good") : "text-muted"}`}
+          >
+            {message?.text ??
+              (selected
+                ? "Your grades are kept separately for each department."
+                : "Cleared your browser? Upload a report you exported earlier to get every grade back.")}
+          </p>
+          <RestoreButton
+            onRestore={onRestore}
+            onMessage={setMessage}
+            className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 self-start rounded-full border border-white/15 bg-white/[0.04] px-4 text-[13px] font-semibold text-ink transition-colors hover:border-brand/60 hover:bg-brand/10 disabled:opacity-60 sm:self-auto"
+          >
+            <FileUp className="size-4" aria-hidden /> Restore from PDF
+          </RestoreButton>
+        </div>
+      </div>
     </div>
   );
 }

@@ -152,3 +152,24 @@ export function nextClass(gpa) {
   const above = [...CLASSES].reverse().find((c) => c.min > gpa);
   return above ? { ...above, gap: truncate2(above.min - gpa + 1e-9) } : null;
 }
+
+/** Semester and cumulative GPA for every term, in order (Y1 S1 … Y4 S2). */
+export function computeTerms(active, grades) {
+  const list = [];
+  for (const y of YEARS) {
+    for (const s of SEMESTERS) {
+      const inTerm = active.filter((c) => c.year === y && c.semester === s);
+      const upTo = active.filter((c) => c.year < y || (c.year === y && c.semester <= s));
+      list.push({ year: y, semester: s, ...computeGpa(inTerm, grades), cumulative: computeGpa(upTo, grades).gpa });
+    }
+  }
+  return list;
+}
+
+/** Latest academic year with a grade, so restored or reopened data lands where the student left off. */
+export function latestGradedYear(deptData) {
+  const years = Object.keys(deptData?.grades || {})
+    .map((code) => Number(code.match(/\d/)?.[0] || 1))
+    .filter((y) => y >= 1 && y <= 4);
+  return years.length ? Math.max(...years) : 1;
+}

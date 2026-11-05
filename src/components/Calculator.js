@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { DEPARTMENTS } from "@/data/departments";
-import { buildCourses, classFor, computeGpa, formatGpa, getDepartment, SEMESTERS, YEARS } from "@/lib/gpa";
-import { EMPTY_DEPT_DATA, EMPTY_STATE, loadState, saveState } from "@/lib/storage";
+import { buildCourses, classFor, computeGpa, computeTerms, formatGpa, getDepartment, latestGradedYear, YEARS } from "@/lib/gpa";
+import { EMPTY_DEPT_DATA, EMPTY_STATE, loadState, saveProfile, saveState } from "@/lib/storage";
 import DepartmentPicker from "./DepartmentPicker";
 import SemesterCard from "./SemesterCard";
 import SummaryPanel from "./SummaryPanel";
@@ -32,27 +32,14 @@ export default function Calculator({ intro }) {
   const hidden = useMemo(() => new Set(data.hidden), [data.hidden]);
   const active = useMemo(() => courses.filter((c) => !hidden.has(c.id)), [courses, hidden]);
 
-  const terms = useMemo(() => {
-    const list = [];
-    for (const y of YEARS) {
-      for (const s of SEMESTERS) {
-        const inTerm = active.filter((c) => c.year === y && c.semester === s);
-        const upTo = active.filter((c) => c.year < y || (c.year === y && c.semester <= s));
-        list.push({ year: y, semester: s, ...computeGpa(inTerm, data.grades), cumulative: computeGpa(upTo, data.grades).gpa });
-      }
-    }
-    return list;
-  }, [active, data.grades]);
+  const terms = useMemo(() => computeTerms(active, data.grades), [active, data.grades]);
 
   const overall = useMemo(() => computeGpa(active, data.grades), [active, data.grades]);
 
   function selectDept(id) {
     setState((s) => ({ ...s, dept: id }));
-    const d = state.data[id];
     // Open the latest year with grades, so returning students land where they left off.
-    const graded = d ? Object.keys(d.grades || {}) : [];
-    const years = graded.map((code) => Number(code.match(/\d/)?.[0] || 1)).filter((y) => y >= 1 && y <= 4);
-    setYear(years.length ? Math.max(...years) : 1);
+    setYear(latestGradedYear(state.data[id]));
   }
 
   function update(fn) {
@@ -110,9 +97,13 @@ export default function Calculator({ intro }) {
         return { ...s, data };
       });
     },
-    importState(next) {
-      setState(next);
-      setYear(1);
+    // A restored report or backup replaces the departments it contains and keeps any others.
+    importState({ state: next, profile }) {
+      setState((s) => ({ version: 1, dept: next.dept || s.dept, data: { ...s.data, ...next.data } }));
+      const target = next.dept || state.dept;
+      setYear(latestGradedYear(next.data[target] || state.data[target]));
+      if (profile && (profile.name || profile.regNo)) saveProfile(profile);
+      setTimeout(() => document.getElementById("calculator")?.scrollIntoView({ behavior: "smooth" }), 80);
     },
   };
 
@@ -136,7 +127,14 @@ export default function Calculator({ intro }) {
         <div className="container-page pt-32 pb-14 sm:pt-40 sm:pb-20">
           {intro}
           <div className="mt-12 sm:mt-14">
-            <DepartmentPicker departments={DEPARTMENTS} selected={state.dept} onSelect={selectDept} data={state.data} ready={ready} />
+            <DepartmentPicker
+              departments={DEPARTMENTS}
+              selected={state.dept}
+              onSelect={selectDept}
+              onRestore={actions.importState}
+              data={state.data}
+              ready={ready}
+            />
           </div>
         </div>
       </section>

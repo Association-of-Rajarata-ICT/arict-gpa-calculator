@@ -46,3 +46,21 @@ export function sanitize(input) {
 function isPlainObject(v) {
   return v !== null && typeof v === "object" && !Array.isArray(v);
 }
+
+// Name and registration number for the PDF report, remembered on this device only.
+const PROFILE_KEY = "arict-gpa:profile";
+
+export function loadProfile() {
+  try {
+    const p = JSON.parse(window.localStorage.getItem(PROFILE_KEY) || "{}");
+    return { name: typeof p.name === "string" ? p.name : "", regNo: typeof p.regNo === "string" ? p.regNo : "" };
+  } catch {
+    return { name: "", regNo: "" };
+  }
+}
+
+export function saveProfile({ name = "", regNo = "" }) {
+  try {
+    window.localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, regNo }));
+  } catch {}
+}

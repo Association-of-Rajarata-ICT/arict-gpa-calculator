@@ -5,7 +5,9 @@ A semester and overall GPA calculator for the five departments of the Faculty of
 - Choose a department and its courses load with their credits and GPA status already filled in.
 - Pick a grade for each course to see the semester, cumulative and overall GPA, plus the class band.
 - Applied Sciences students can switch subjects on and off. Anyone can move a course to the other semester, remove courses they aren't taking, or add their own.
-- Everything is saved in the browser's `localStorage` under the key `arict-gpa:v1`. There's no backend and no sign-in. The Backup and Restore buttons move a JSON file between devices.
+- Everything is saved in the browser's `localStorage` under the key `arict-gpa:v1`. There's no backend and no sign-in.
+- **PDF report.** "Download PDF report" in the summary panel builds an A4 report in the browser (`src/lib/report.js`, using `pdf-lib`). It has the ARICT header, overall GPA and class band, a semester GPA chart, a semester-by-semester table, every graded course, and the grading reference. Before export, a dialog asks for an optional name and registration number (remembered under `arict-gpa:profile`). "Skip and download" leaves them out.
+- **Restore from the PDF.** Each report carries the full saved state as JSON. It's stored twice: under the `ARICTGPABackup` key of the PDF info dictionary, and as an `arict-gpa-backup.json` attachment. "Restore from PDF" (in the department panel and the summary panel) reads either copy and fills the calculator back in. Restoring replaces the departments the file contains and keeps any others. Older JSON backups are still accepted, and the JSON button still exports one. A printed or "Save as PDF" copy has no data, so it can't be restored.
 
 ## Data and rules
 

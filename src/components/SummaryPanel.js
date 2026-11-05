@@ -1,43 +1,31 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Download, HardDrive, RotateCcw, Upload } from "lucide-react";
+import { useState } from "react";
+import { Braces, FileDown, HardDrive, RotateCcw, Upload } from "lucide-react";
 import { classFor, formatGpa, nextClass, ROMAN } from "@/lib/gpa";
-import { sanitize } from "@/lib/storage";
+import { createReport, downloadBytes } from "@/lib/report";
+import ExportDialog from "./ExportDialog";
+import RestoreButton from "./RestoreButton";
 
 export default function SummaryPanel({ dept, overall, terms, onJump, state, actions }) {
-  const fileRef = useRef(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [message, setMessage] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
   const band = classFor(overall.gpa);
   const next = nextClass(overall.gpa);
   const pct = overall.gpa != null ? (overall.gpa / 4) * 100 : 0;
 
-  function exportBackup() {
-    const blob = new Blob([JSON.stringify({ ...state, exportedAt: new Date().toISOString() }, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `arict-gpa-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setMessage({ tone: "ok", text: "Backup downloaded." });
+  async function exportPdf(details) {
+    const { bytes, filename } = await createReport(state, details);
+    downloadBytes(bytes, filename);
+    setMessage({ tone: "ok", text: "Report downloaded. Keep it safe: it restores your grades." });
   }
 
-  async function importBackup(e) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    try {
-      const next = sanitize(JSON.parse(await file.text()));
-      actions.importState({ ...next, dept: next.dept || dept.id });
-      setMessage({ tone: "ok", text: "Backup restored." });
-    } catch {
-      setMessage({ tone: "error", text: "That file isn't an ARICT GPA backup." });
-    }
+  function exportJson() {
+    const json = JSON.stringify({ ...state, exportedAt: new Date().toISOString() }, null, 2);
+    downloadBytes(json, `arict-gpa-backup-${new Date().toISOString().slice(0, 10)}.json`, "application/json");
+    setMessage({ tone: "ok", text: "JSON backup downloaded." });
   }
 
   return (
@@ -94,23 +82,40 @@ export default function SummaryPanel({ dept, overall, terms, onJump, state, acti
       </div>
 
       <div className="mt-4 rounded-3xl border border-line bg-surface p-5">
-        <p className="flex items-start gap-2 text-[13px] leading-relaxed text-muted">
-          <HardDrive className="mt-0.5 size-4 shrink-0 text-ink" aria-hidden />
-          Saved only in this browser. Download a backup to move your grades to another device.
-        </p>
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <button type="button" onClick={exportBackup} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-ink text-[13px] font-semibold text-paper hover:bg-ink-soft">
-            <Download className="size-4" aria-hidden /> Backup
-          </button>
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-line-strong text-[13px] font-semibold text-ink hover:border-ink"
+        <h3 className="text-[12px] font-semibold tracking-[0.1em] text-muted uppercase">Report &amp; backup</h3>
+        <button
+          type="button"
+          onClick={() => setExporting(true)}
+          className="group mt-3 flex w-full items-center gap-3 rounded-2xl bg-ink p-3 pr-4 text-left text-paper transition-colors hover:bg-ink-soft"
+        >
+          <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand text-white">
+            <FileDown className="size-5" aria-hidden />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-[14px] font-semibold">Download PDF report</span>
+            <span className="block text-[12px] text-paper/60">Every GPA, course and grade</span>
+          </span>
+        </button>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <RestoreButton
+            onRestore={actions.importState}
+            onMessage={setMessage}
+            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-line-strong text-[13px] font-semibold text-ink hover:border-ink disabled:opacity-60"
           >
             <Upload className="size-4" aria-hidden /> Restore
+          </RestoreButton>
+          <button
+            type="button"
+            onClick={exportJson}
+            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-line-strong text-[13px] font-semibold text-ink hover:border-ink"
+          >
+            <Braces className="size-4" aria-hidden /> JSON
           </button>
-          <input ref={fileRef} type="file" accept="application/json,.json" onChange={importBackup} className="hidden" />
         </div>
+        <p className="mt-3 flex items-start gap-2 text-[12.5px] leading-relaxed text-muted">
+          <HardDrive className="mt-0.5 size-4 shrink-0 text-ink" aria-hidden />
+          Saved only in this browser. The PDF report is also a backup: restore it here on any device.
+        </p>
         {confirmReset ? (
           <div className="mt-3 rounded-2xl bg-brand-soft p-3">
             <p className="text-[13px] font-medium text-ink">Clear every grade and change for {dept.name}?</p>
@@ -146,6 +151,7 @@ export default function SummaryPanel({ dept, overall, terms, onJump, state, acti
           </p>
         )}
       </div>
+      {exporting && <ExportDialog deptName={dept.name} onExport={exportPdf} onClose={() => setExporting(false)} />}
     </aside>
   );
 }

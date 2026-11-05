@@ -8,7 +8,7 @@ import DepartmentPicker from "./DepartmentPicker";
 import SemesterCard from "./SemesterCard";
 import SummaryPanel from "./SummaryPanel";
 
-export default function Calculator() {
+export default function Calculator({ intro }) {
   const [state, setState] = useState(EMPTY_STATE);
   const [ready, setReady] = useState(false);
   const [year, setYear] = useState(1);
@@ -121,94 +121,113 @@ export default function Calculator() {
   const existingCodes = new Map(courses.map((c) => [c.code, c]));
 
   return (
-    <section id="calculator" className="container-page scroll-mt-24 pb-24">
-      <DepartmentPicker departments={DEPARTMENTS} selected={state.dept} onSelect={selectDept} data={state.data} ready={ready} />
-
-      {!ready ? (
-        <div className="mt-10 h-96 animate-pulse rounded-3xl bg-mist" aria-hidden />
-      ) : !dept ? (
-        <EmptyState />
-      ) : (
-        <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
-          <div className="min-w-0">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-[13px] font-medium text-muted">{dept.programme}</p>
-                <h2 className="mt-1 font-display text-2xl font-bold tracking-[-0.03em] text-ink sm:text-3xl">
-                  {dept.name}
-                </h2>
-              </div>
-              <YearTabs year={year} onChange={setYear} terms={terms} />
-            </div>
-
-            {dept.subjects.length > 1 && (
-              <div className="mt-5 flex flex-wrap items-center gap-2">
-                <span className="mr-1 text-[13px] font-medium text-muted">Your subjects</span>
-                {dept.subjects.map((s) => {
-                  const on = enabledSubjects.includes(s.prefix);
-                  return (
-                    <button
-                      key={s.prefix}
-                      type="button"
-                      onClick={() => actions.toggleSubject(s.prefix)}
-                      aria-pressed={on}
-                      className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors ${
-                        on
-                          ? "border-ink bg-ink text-paper"
-                          : "border-line-strong bg-surface text-muted hover:border-ink/40 hover:text-ink"
-                      }`}
-                    >
-                      <span className="font-mono text-[11px] opacity-70">{s.prefix}</span>
-                      {s.label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            <div className="mt-6 grid gap-6">
-              {yearTerms.map((t) => (
-                <SemesterCard
-                  key={`${dept.id}-${t.year}-${t.semester}`}
-                  term={t}
-                  courses={courses.filter((c) => c.year === t.year && c.semester === t.semester)}
-                  hidden={hidden}
-                  grades={data.grades}
-                  actions={actions}
-                  existingCodes={existingCodes}
-                />
-              ))}
-            </div>
+    <>
+      {/* The hero is always dark, like arict.lk: the `dark` class re-scopes every colour token inside it. */}
+      <section className="dark relative isolate overflow-hidden border-b border-line bg-[#070708]">
+        <div className="hero-grid pointer-events-none absolute inset-0 -z-10" aria-hidden />
+        <div
+          className="pointer-events-none absolute top-[-16rem] left-[8%] -z-10 h-[30rem] w-[44rem] rounded-full bg-brand/20 blur-3xl"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute right-[-10rem] bottom-[-14rem] -z-10 h-[26rem] w-[40rem] rounded-full bg-[#a00000]/25 blur-3xl"
+          aria-hidden
+        />
+        <div className="container-page pt-32 pb-14 sm:pt-40 sm:pb-20">
+          {intro}
+          <div className="mt-12 sm:mt-14">
+            <DepartmentPicker departments={DEPARTMENTS} selected={state.dept} onSelect={selectDept} data={state.data} ready={ready} />
           </div>
-
-          {/* On phones the summary sits below every semester, so keep the overall GPA in view. */}
-          <a
-            href="#summary"
-            className="fixed inset-x-3 bottom-3 z-40 flex items-center justify-between gap-3 rounded-full bg-[#0b0b0b] py-2 pr-2 pl-5 text-white shadow-[0_12px_30px_-12px_rgb(0_0_0/0.6)] ring-1 ring-white/10 lg:hidden"
-          >
-            <span className="text-[12px] font-semibold tracking-[0.08em] text-white/60 uppercase">Overall GPA</span>
-            <span className="flex items-center gap-3">
-              <span className="font-display text-xl font-extrabold tabular-nums">{formatGpa(overall.gpa)}</span>
-              <span className="rounded-full bg-white px-3 py-1 text-[12px] font-bold text-[#0b0b0b]">
-                {classFor(overall.gpa)?.label.replace("Second Class", "2nd") ?? "Summary"}
-              </span>
-            </span>
-          </a>
-
-          <SummaryPanel
-            dept={dept}
-            overall={overall}
-            terms={terms}
-            onJump={(y) => {
-              setYear(y);
-              document.getElementById("calculator")?.scrollIntoView({ behavior: "smooth" });
-            }}
-            state={state}
-            actions={actions}
-          />
         </div>
-      )}
-    </section>
+      </section>
+
+      <section id="calculator" className="container-page scroll-mt-24 pt-4 pb-24">
+        {!ready ? (
+          <div className="mt-10 h-96 animate-pulse rounded-3xl bg-mist" aria-hidden />
+        ) : !dept ? (
+          <EmptyState />
+        ) : (
+          <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+            <div className="min-w-0">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-[13px] font-medium text-muted">{dept.programme}</p>
+                  <h2 className="mt-1 font-display text-2xl font-bold tracking-[-0.03em] text-ink sm:text-3xl">
+                    {dept.name}
+                  </h2>
+                </div>
+                <YearTabs year={year} onChange={setYear} terms={terms} />
+              </div>
+
+              {dept.subjects.length > 1 && (
+                <div className="mt-5 flex flex-wrap items-center gap-2">
+                  <span className="mr-1 text-[13px] font-medium text-muted">Your subjects</span>
+                  {dept.subjects.map((s) => {
+                    const on = enabledSubjects.includes(s.prefix);
+                    return (
+                      <button
+                        key={s.prefix}
+                        type="button"
+                        onClick={() => actions.toggleSubject(s.prefix)}
+                        aria-pressed={on}
+                        className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors ${
+                          on
+                            ? "border-ink bg-ink text-paper"
+                            : "border-line-strong bg-surface text-muted hover:border-ink/40 hover:text-ink"
+                        }`}
+                      >
+                        <span className="font-mono text-[11px] opacity-70">{s.prefix}</span>
+                        {s.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="mt-6 grid gap-6">
+                {yearTerms.map((t) => (
+                  <SemesterCard
+                    key={`${dept.id}-${t.year}-${t.semester}`}
+                    term={t}
+                    courses={courses.filter((c) => c.year === t.year && c.semester === t.semester)}
+                    hidden={hidden}
+                    grades={data.grades}
+                    actions={actions}
+                    existingCodes={existingCodes}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* On phones the summary sits below every semester, so keep the overall GPA in view. */}
+            <a
+              href="#summary"
+              className="fixed inset-x-3 bottom-3 z-40 flex items-center justify-between gap-3 rounded-full bg-[#0b0b0b] py-2 pr-2 pl-5 text-white shadow-[0_12px_30px_-12px_rgb(0_0_0/0.6)] ring-1 ring-white/10 lg:hidden"
+            >
+              <span className="text-[12px] font-semibold tracking-[0.08em] text-white/60 uppercase">Overall GPA</span>
+              <span className="flex items-center gap-3">
+                <span className="font-display text-xl font-extrabold tabular-nums">{formatGpa(overall.gpa)}</span>
+                <span className="rounded-full bg-white px-3 py-1 text-[12px] font-bold text-[#0b0b0b]">
+                  {classFor(overall.gpa)?.label.replace("Second Class", "2nd") ?? "Summary"}
+                </span>
+              </span>
+            </a>
+
+            <SummaryPanel
+              dept={dept}
+              overall={overall}
+              terms={terms}
+              onJump={(y) => {
+                setYear(y);
+                document.getElementById("calculator")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              state={state}
+              actions={actions}
+            />
+          </div>
+        )}
+      </section>
+    </>
   );
 }
 

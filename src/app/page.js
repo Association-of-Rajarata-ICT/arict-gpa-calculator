@@ -10,8 +10,7 @@ export default function Home() {
     <>
       <Header />
       <main>
-        <Hero />
-        <Calculator />
+        <Calculator intro={<HeroIntro />} />
         <Grading />
       </main>
       <Footer />
@@ -19,32 +18,30 @@ export default function Home() {
   );
 }
 
-function Hero() {
+// Server-rendered intro for the hero stage; Calculator places the department picker under it.
+function HeroIntro() {
   return (
-    <section className="relative isolate overflow-hidden">
-      <div className="hero-grid pointer-events-none absolute inset-0 -z-10" aria-hidden />
-      <div
-        className="pointer-events-none absolute top-[-14rem] left-1/2 -z-10 h-[28rem] w-[46rem] -translate-x-1/2 rounded-full bg-brand/10 blur-3xl"
-        aria-hidden
-      />
-      <div className="container-page pt-36 pb-14 text-center sm:pt-44 sm:pb-16">
-        <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/80 px-3.5 py-1.5 text-[12.5px] font-medium text-body backdrop-blur">
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-end lg:gap-14">
+      <div>
+        <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12.5px] font-medium text-white/75 backdrop-blur">
           <span className="size-1.5 rounded-full bg-brand" aria-hidden />
           Faculty of Applied Sciences · Rajarata University of Sri Lanka
         </p>
-        <h1 className="mx-auto mt-6 max-w-4xl font-display text-[2.6rem] leading-[1.02] font-bold tracking-[-0.035em] text-balance text-ink sm:text-6xl md:text-7xl">
+        <h1 className="mt-6 font-display text-[2.6rem] leading-[1.02] font-bold tracking-[-0.035em] text-balance text-white sm:text-6xl lg:text-[4.4rem]">
           Your GPA, <span className="text-brand">semester</span> by semester.
         </h1>
-        <p className="mx-auto mt-5 max-w-xl text-[15.5px] leading-relaxed text-pretty text-muted sm:text-lg">
-          Pick your department and every course loads with its credits and GPA weight. Add your grades to see your
-          semester, cumulative and overall GPA.
+      </div>
+      <div className="lg:pb-2">
+        <p className="max-w-md text-[15.5px] leading-relaxed text-pretty text-white/65 sm:text-[17px]">
+          Pick your department and every course loads with its credits and GPA weight. Add your grades to see your semester,
+          cumulative and overall GPA.
         </p>
-        <p className="mt-6 inline-flex items-center gap-1.5 text-[13px] font-medium text-muted">
+        <p className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-medium text-white/55">
           <ShieldCheck className="size-4 text-good" aria-hidden />
           No sign-in. Your grades never leave this browser.
         </p>
       </div>
-    </section>
+    </div>
   );
 }
 

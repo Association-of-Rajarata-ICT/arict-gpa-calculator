@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowUpRight, Moon, Sun } from "lucide-react";
 
 const NAV = [
-  { href: "#calculator", label: "Calculator" },
+  { href: "#departments", label: "Calculator" },
   { href: "#grading", label: "Grading" },
   { href: "https://papers.arict.lk", label: "Past Papers", external: true },
 ];
@@ -20,7 +20,7 @@ export default function Header() {
   return (
     <>
       <a
-        href="#calculator"
+        href="#departments"
         className="fixed top-2 left-2 z-[70] -translate-y-20 rounded-full bg-ink px-4 py-2 text-sm font-medium text-paper transition-transform focus:translate-y-0"
       >
         Skip to calculator

@@ -1,0 +1,258 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { DEPARTMENTS } from "@/data/departments";
+import { buildCourses, classFor, computeGpa, formatGpa, getDepartment, SEMESTERS, YEARS } from "@/lib/gpa";
+import { EMPTY_DEPT_DATA, EMPTY_STATE, loadState, saveState } from "@/lib/storage";
+import DepartmentPicker from "./DepartmentPicker";
+import SemesterCard from "./SemesterCard";
+import SummaryPanel from "./SummaryPanel";
+
+export default function Calculator() {
+  const [state, setState] = useState(EMPTY_STATE);
+  const [ready, setReady] = useState(false);
+  const [year, setYear] = useState(1);
+
+  // localStorage only exists in the browser, so the saved state loads after hydration.
+  useEffect(() => {
+    const saved = loadState();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setState(saved);
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (ready) saveState(state);
+  }, [state, ready]);
+
+  const dept = getDepartment(state.dept);
+  const data = (dept && state.data[dept.id]) || EMPTY_DEPT_DATA;
+
+  const courses = useMemo(() => (dept ? buildCourses(dept, data) : []), [dept, data]);
+  const hidden = useMemo(() => new Set(data.hidden), [data.hidden]);
+  const active = useMemo(() => courses.filter((c) => !hidden.has(c.id)), [courses, hidden]);
+
+  const terms = useMemo(() => {
+    const list = [];
+    for (const y of YEARS) {
+      for (const s of SEMESTERS) {
+        const inTerm = active.filter((c) => c.year === y && c.semester === s);
+        const upTo = active.filter((c) => c.year < y || (c.year === y && c.semester <= s));
+        list.push({ year: y, semester: s, ...computeGpa(inTerm, data.grades), cumulative: computeGpa(upTo, data.grades).gpa });
+      }
+    }
+    return list;
+  }, [active, data.grades]);
+
+  const overall = useMemo(() => computeGpa(active, data.grades), [active, data.grades]);
+
+  function selectDept(id) {
+    setState((s) => ({ ...s, dept: id }));
+    const d = state.data[id];
+    // Open the latest year with grades, so returning students land where they left off.
+    const graded = d ? Object.keys(d.grades || {}) : [];
+    const years = graded.map((code) => Number(code.match(/\d/)?.[0] || 1)).filter((y) => y >= 1 && y <= 4);
+    setYear(years.length ? Math.max(...years) : 1);
+  }
+
+  function update(fn) {
+    if (!dept) return;
+    setState((s) => ({ ...s, data: { ...s.data, [dept.id]: fn(s.data[dept.id] || EMPTY_DEPT_DATA) } }));
+  }
+
+  const actions = {
+    setGrade(id, grade) {
+      update((d) => {
+        const grades = { ...d.grades };
+        if (grade) grades[id] = grade;
+        else delete grades[id];
+        return { ...d, grades };
+      });
+    },
+    clearGrades(ids) {
+      update((d) => {
+        const grades = { ...d.grades };
+        for (const id of ids) delete grades[id];
+        return { ...d, grades };
+      });
+    },
+    move(course) {
+      const target = course.semester === 1 ? 2 : 1;
+      update((d) => ({ ...d, moved: { ...d.moved, [course.id]: target } }));
+    },
+    hide(id) {
+      update((d) => ({ ...d, hidden: [...new Set([...d.hidden, id])] }));
+    },
+    unhide(id) {
+      update((d) => ({ ...d, hidden: d.hidden.filter((h) => h !== id) }));
+    },
+    addCustom(course) {
+      update((d) => ({ ...d, custom: [...d.custom, course] }));
+    },
+    removeCustom(id) {
+      update((d) => {
+        const grades = { ...d.grades };
+        delete grades[id];
+        return { ...d, custom: d.custom.filter((c) => c.id !== id), grades };
+      });
+    },
+    toggleSubject(prefix) {
+      update((d) => {
+        const current = d.subjects ?? dept.subjects.map((s) => s.prefix);
+        const next = current.includes(prefix) ? current.filter((p) => p !== prefix) : [...current, prefix];
+        return { ...d, subjects: next };
+      });
+    },
+    resetDept() {
+      setState((s) => {
+        const data = { ...s.data };
+        delete data[dept.id];
+        return { ...s, data };
+      });
+    },
+    importState(next) {
+      setState(next);
+      setYear(1);
+    },
+  };
+
+  const enabledSubjects = data.subjects ?? dept?.subjects.map((s) => s.prefix) ?? [];
+  const yearTerms = terms.filter((t) => t.year === year);
+  const existingCodes = new Map(courses.map((c) => [c.code, c]));
+
+  return (
+    <section id="calculator" className="container-page scroll-mt-24 pb-24">
+      <DepartmentPicker departments={DEPARTMENTS} selected={state.dept} onSelect={selectDept} data={state.data} ready={ready} />
+
+      {!ready ? (
+        <div className="mt-10 h-96 animate-pulse rounded-3xl bg-mist" aria-hidden />
+      ) : !dept ? (
+        <EmptyState />
+      ) : (
+        <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+          <div className="min-w-0">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[13px] font-medium text-muted">{dept.programme}</p>
+                <h2 className="mt-1 font-display text-2xl font-bold tracking-[-0.03em] text-ink sm:text-3xl">
+                  {dept.name}
+                </h2>
+              </div>
+              <YearTabs year={year} onChange={setYear} terms={terms} />
+            </div>
+
+            {dept.subjects.length > 1 && (
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                <span className="mr-1 text-[13px] font-medium text-muted">Your subjects</span>
+                {dept.subjects.map((s) => {
+                  const on = enabledSubjects.includes(s.prefix);
+                  return (
+                    <button
+                      key={s.prefix}
+                      type="button"
+                      onClick={() => actions.toggleSubject(s.prefix)}
+                      aria-pressed={on}
+                      className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors ${
+                        on
+                          ? "border-ink bg-ink text-paper"
+                          : "border-line-strong bg-surface text-muted hover:border-ink/40 hover:text-ink"
+                      }`}
+                    >
+                      <span className="font-mono text-[11px] opacity-70">{s.prefix}</span>
+                      {s.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="mt-6 grid gap-6">
+              {yearTerms.map((t) => (
+                <SemesterCard
+                  key={`${dept.id}-${t.year}-${t.semester}`}
+                  term={t}
+                  courses={courses.filter((c) => c.year === t.year && c.semester === t.semester)}
+                  hidden={hidden}
+                  grades={data.grades}
+                  actions={actions}
+                  existingCodes={existingCodes}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* On phones the summary sits below every semester, so keep the overall GPA in view. */}
+          <a
+            href="#summary"
+            className="fixed inset-x-3 bottom-3 z-40 flex items-center justify-between gap-3 rounded-full bg-[#0b0b0b] py-2 pr-2 pl-5 text-white shadow-[0_12px_30px_-12px_rgb(0_0_0/0.6)] ring-1 ring-white/10 lg:hidden"
+          >
+            <span className="text-[12px] font-semibold tracking-[0.08em] text-white/60 uppercase">Overall GPA</span>
+            <span className="flex items-center gap-3">
+              <span className="font-display text-xl font-extrabold tabular-nums">{formatGpa(overall.gpa)}</span>
+              <span className="rounded-full bg-white px-3 py-1 text-[12px] font-bold text-[#0b0b0b]">
+                {classFor(overall.gpa)?.label.replace("Second Class", "2nd") ?? "Summary"}
+              </span>
+            </span>
+          </a>
+
+          <SummaryPanel
+            dept={dept}
+            overall={overall}
+            terms={terms}
+            onJump={(y) => {
+              setYear(y);
+              document.getElementById("calculator")?.scrollIntoView({ behavior: "smooth" });
+            }}
+            state={state}
+            actions={actions}
+          />
+        </div>
+      )}
+    </section>
+  );
+}
+
+function YearTabs({ year, onChange, terms }) {
+  return (
+    <div role="tablist" aria-label="Academic year" className="inline-flex self-start rounded-full border border-line bg-mist p-1 sm:self-auto">
+      {YEARS.map((y) => {
+        const graded = terms.some((t) => t.year === y && t.graded > 0);
+        const selected = y === year;
+        return (
+          <button
+            key={y}
+            role="tab"
+            type="button"
+            aria-selected={selected}
+            onClick={() => onChange(y)}
+            className={`relative inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-[13.5px] font-semibold transition-all ${
+              selected ? "bg-surface text-ink shadow-[0_1px_3px_rgb(0_0_0/0.12)]" : "text-muted hover:text-ink"
+            }`}
+          >
+            Year {y}
+            {graded && <span className={`size-1.5 rounded-full ${selected ? "bg-brand" : "bg-muted/60"}`} aria-label="has grades" />}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function EmptyState() {
+  const steps = [
+    { n: "01", title: "Pick your department", text: "Courses, credits and GPA weights load from the faculty curriculum." },
+    { n: "02", title: "Enter your grades", text: "Choose a grade for each course you sat. Leave the rest blank." },
+    { n: "03", title: "See every GPA", text: "Semester, cumulative and overall GPA update as you go, with your class band." },
+  ];
+  return (
+    <div className="mt-10 grid gap-px overflow-hidden rounded-3xl border border-line bg-line sm:grid-cols-3">
+      {steps.map((s) => (
+        <div key={s.n} className="bg-surface p-6 sm:p-7">
+          <span className="font-mono text-xs font-medium text-brand">{s.n}</span>
+          <h3 className="mt-3 font-display text-lg font-bold tracking-tight text-ink">{s.title}</h3>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted">{s.text}</p>
+        </div>
+      ))}
+    </div>
+  );
+}

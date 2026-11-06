@@ -6,6 +6,10 @@ export const FAQ = [
     a: "GPA is the sum of (grade point × credits) divided by the sum of credits, truncated (not rounded) to two decimals. Grade points are A+ and A 4.0, A- 3.7, B+ 3.3, B 3.0, B- 2.7, C+ 2.3, C 2.0, C- 1.7, D+ 1.3, D 1.0 and E 0.0, as in the Faculty of Applied Sciences Student Handbook 2022/23.",
   },
   {
+    q: "What GPA do I need to reach the next class?",
+    a: "Pick your department, enter your grades, and open the next-class planner below your semesters. Choose BSc (3 years) or BSc Honours (4 years). It shows the average your remaining courses need for First Class (3.70), Second Upper (3.30), Second Lower (3.00) and Pass (2.00), suggests a grade for each remaining course, and lets you change any of them to see your projected final GPA. It uses the GPA cut-offs only; classes also need minimum grades in the handbook.",
+  },
+  {
     q: "How many credits is a course worth?",
     a: "The second digit of the course code is its credit value. ICT 1407 is a 4-credit course and ICT 1201 is a 2-credit course. Foundation (FDN) courses and IDC 1202 Career Development carry zero credits and are not counted in the GPA.",
   },

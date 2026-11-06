@@ -17,6 +17,7 @@ import {
   YEARS,
 } from "@/lib/gpa";
 import { DEPARTMENTS } from "@/data/departments";
+import { buildPlan } from "@/lib/planner";
 import { EMPTY_DEPT_DATA, sanitize } from "@/lib/storage";
 
 const APP_ID = "arict-gpa-calculator";
@@ -499,6 +500,127 @@ export async function createReport(state, { name = "", regNo = "" } = {}) {
   line(M, y, W - M, y, { color: C.line });
   y += 26;
 
+  // ---- next-class plan ----
+  const plan = buildPlan({ courses: active, grades, track: data.track, targets: data.targets, goalLabel: data.goal });
+  if (plan.goal) {
+    const PLAN_SHORT = { "First Class": "First Class", "Second Class (Upper)": "Second Upper", "Second Class (Lower)": "Second Lower", Pass: "Pass" };
+    sectionTitle(
+      "PLAN",
+      `Your path to ${plan.goal.label}`,
+      `${plan.track.long}: ${plan.doneCredits} GPA credits graded, ${plan.remCredits} to come. GPA cut-offs only; classes also need minimum grades.`,
+      150,
+    );
+
+    // What each class needs, as a table.
+    const pc = { cls: M + 12, cut: M + CW * 0.36, need: M + CW * 0.58, words: M + CW * 0.62 };
+    const ho = { size: 6.3, bold: true, color: C.muted, tracking: 1 };
+    spaced("CLASS", pc.cls, y + 8, ho);
+    spacedRight("FROM", pc.cut, y + 8, ho);
+    spacedRight("AVERAGE NEEDED", pc.need, y + 8, ho);
+    spaced("WHAT THAT MEANS", pc.words, y + 8, ho);
+    y += 14;
+    line(M, y, W - M, y, { color: C.ink, thickness: 0.8 });
+    plan.ladder.forEach((l) => {
+      const rowH = 19;
+      const isGoal = l.label === plan.goal.label;
+      const here = plan.currentClass?.label === l.label;
+      if (isGoal) rrect(M, y + 1, CW, rowH - 2, 5, { color: C.soft });
+      const b = y + 12.5;
+      const nameO = { size: 9, bold: true, color: C.ink };
+      text(PLAN_SHORT[l.label] || l.label, pc.cls, b, nameO);
+      let tagX = pc.cls + width(PLAN_SHORT[l.label] || l.label, nameO) + 6;
+      const tag = (label, bg) => {
+        const tw3 = spacedWidth(label, { size: 5.3, bold: true, tracking: 0.6 }) + 8;
+        rrect(tagX, y + 5, tw3, 10, 5, { color: bg });
+        spaced(label, tagX + 4, y + 12, { size: 5.3, bold: true, color: C.white, tracking: 0.6 });
+        tagX += tw3 + 4;
+      };
+      if (isGoal) tag("GOAL", C.brand);
+      if (here) tag("NOW", C.ink);
+      textRight(l.min.toFixed(2), pc.cut, b, { size: 9, color: C.body });
+      const needText = l.status === "possible" ? l.need.toFixed(2) : "—";
+      textRight(needText, pc.need, b, { size: 9, bold: l.status === "possible", color: l.status === "possible" ? C.ink : C.muted });
+      const words =
+        l.status === "secured"
+          ? plan.remCredits
+            ? "Secured: C or better in the rest keeps it"
+            : "Secured"
+          : l.status === "possible"
+            ? `About ${l.words} in every remaining course`
+            : plan.remCredits
+              ? `Out of reach: the highest possible is ${formatGpa(plan.best)}`
+              : "Out of reach";
+      text(fit(words, { size: 8.4 }, W - M - 10 - pc.words), pc.words, b, { size: 8.4, color: l.status === "secured" ? C.good : C.body });
+      y += rowH;
+    });
+    line(M, y, W - M, y, { color: C.line });
+    y += 14;
+
+    if (plan.remaining.length) {
+      // The projection, in one line.
+      ensure(40);
+      const on = plan.projected != null && plan.projected >= plan.goal.min;
+      rrect(M, y, CW, 30, 8, { color: on ? C.ink : C.soft, border: on ? undefined : C.bright });
+      text("WITH THE GRADES BELOW", M + 14, y + 12, { size: 6, bold: true, color: on ? C.white : C.brand, opacity: on ? 0.6 : 1 });
+      text(`Final GPA ${formatGpa(plan.projected)}${plan.projectedClass ? `  ·  ${plan.projectedClass.label}` : ""}`, M + 14, y + 23.5, {
+        size: 10,
+        bold: true,
+        color: on ? C.white : C.ink,
+      });
+      const verdict = on ? `On track for ${plan.goal.label}` : `${Math.max(0, plan.goal.min - plan.projected).toFixed(2)} short of ${plan.goal.label}`;
+      textRight(verdict, W - M - 14, y + 19, { size: 8.5, bold: true, color: on ? C.bright : C.brand });
+      y += 30 + 16;
+
+      // Target grades, by semester, two courses to a row.
+      const byTerm = new Map();
+      for (const c of plan.remaining) {
+        const key = `${c.year}-${c.semester}`;
+        if (!byTerm.has(key)) byTerm.set(key, { year: c.year, semester: c.semester, courses: [] });
+        byTerm.get(key).courses.push(c);
+      }
+      const groups = [...byTerm.values()].sort((a, b) => a.year - b.year || a.semester - b.semester);
+      const colW = (CW - 14) / 2;
+      const rowH = 15;
+      for (const g of groups) {
+        const rows = Math.ceil(g.courses.length / 2);
+        ensure(20 + rowH * Math.min(rows, 3));
+        text(`Year ${g.year}  ·  Semester ${ROMAN[g.semester]}`, M, y + 10, { size: 8.6, bold: true, color: C.ink });
+        const credits = g.courses.reduce((s, c) => s + c.credits, 0);
+        textRight(`${g.courses.length} ${g.courses.length === 1 ? "course" : "courses"}  ·  ${credits} credits`, W - M, y + 10, { size: 7, color: C.muted });
+        y += 15;
+        line(M, y, W - M, y, { color: C.ink, thickness: 0.6 });
+        for (let r = 0; r < rows; r++) {
+          ensure(rowH);
+          if (r % 2 === 1) rect(M, y, CW, rowH, { color: C.mist });
+          for (let side = 0; side < 2; side++) {
+            const c = g.courses[r * 2 + side];
+            if (!c) continue;
+            const x0 = M + side * (colW + 14);
+            const b = y + 10.5;
+            text(displayCode(c.code), x0 + 6, b, { size: 7.6, bold: true, color: C.brand });
+            text(fit(c.title, { size: 7.6 }, colW - 6 - 50 - 58), x0 + 52, b, { size: 7.6, color: C.body });
+            textRight(`${c.credits} cr`, x0 + colW - 34, b, { size: 7, color: C.muted });
+            const gr = plan.planned[c.id];
+            const gw2 = width(gr, { size: 8, bold: true }) + 10;
+            rrect(x0 + colW - 4 - gw2, y + 2.5, gw2, 10.5, 3, { border: C.ink, borderWidth: 0.6 });
+            text(gr, x0 + colW - 4 - gw2 + 5, y + 10.4, { size: 8, bold: true, color: C.ink });
+          }
+          y += rowH;
+        }
+        y += 10;
+      }
+      text(
+        plan.edited
+          ? "Grades you changed in the planner are used above; the rest are the planner's suggestions."
+          : "Suggested grades: one grade for most courses, a step higher where credits are highest, never below C.",
+        M,
+        y + 2,
+        { size: 7, color: C.muted },
+      );
+      y += 22;
+    }
+  }
+
   // ---- every graded course, by semester ----
   sectionTitle("COURSES", "Every graded course", "Grade point × credits gives the weighted points that make up each GPA.", 80);
   const cc = {
@@ -510,11 +632,15 @@ export async function createReport(state, { name = "", regNo = "" } = {}) {
     point: M + CW * 0.865,
     weighted: M + CW - 10,
   };
+  // Left edge of the grade letter: a fixed column, a little left of where right-aligned grades used to end.
+  const gradeLetterX = cc.grade - 9;
   function courseHeader() {
     spaced("CODE", cc.code, y + 8, { size: 6.3, bold: true, color: C.muted, tracking: 1 });
     spaced("COURSE", cc.title, y + 8, { size: 6.3, bold: true, color: C.muted, tracking: 1 });
     spacedRight("CREDITS", cc.credits, y + 8, { size: 6.3, bold: true, color: C.muted, tracking: 1 });
-    spacedRight("GRADE", cc.grade, y + 8, { size: 6.3, bold: true, color: C.muted, tracking: 1 });
+    // GRADE is centred over the letters below it.
+    const gh = { size: 6.3, bold: true, tracking: 1 };
+    spaced("GRADE", gradeLetterX + 3.2 - spacedWidth("GRADE", gh) / 2, y + 8, { ...gh, color: C.muted });
     spacedRight("POINT", cc.point, y + 8, { size: 6.3, bold: true, color: C.muted, tracking: 1 });
     spacedRight("WEIGHTED", cc.weighted, y + 8, { size: 6.3, bold: true, color: C.muted, tracking: 1 });
     y += 13;
@@ -556,7 +682,11 @@ export async function createReport(state, { name = "", regNo = "" } = {}) {
       lines.forEach((l, li) => text(l, cc.title, base + li * 11, { size: 8.6, color: C.body }));
       if (tags) text(tags, cc.title, base + lines.length * 11 - 0.5, { size: 6.8, bold: true, color: C.brand });
       textRight(String(c.credits), cc.credits, base, { size: 8.6, color: C.body });
-      textRight(g, cc.grade, base, { size: 9, bold: true, color: C.ink });
+      // Letters line up in one column and the + or - hangs to the right, so A, B- and B+ read evenly.
+      const go = { size: 9, bold: true, color: C.ink };
+      const letterW = width(g[0], go);
+      text(g[0], gradeLetterX + (6.4 - letterW) / 2, base, go);
+      if (g.length > 1) text(g.slice(1), gradeLetterX + 6.4 + 0.4, base, go);
       textRight(GRADE_POINTS[g].toFixed(2), cc.point, base, { size: 8.6, color: C.body });
       textRight(counts ? (GRADE_POINTS[g] * c.credits).toFixed(2) : "—", cc.weighted, base, { size: 8.6, bold: counts, color: counts ? C.ink : C.muted });
       y += rowH;

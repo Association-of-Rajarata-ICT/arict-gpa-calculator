@@ -3,7 +3,8 @@ const KEY = "arict-gpa:v1";
 
 export const EMPTY_STATE = { version: 1, dept: null, data: {} };
 
-export const EMPTY_DEPT_DATA = { grades: {}, moved: {}, hidden: [], custom: [], subjects: null };
+// track, goal and targets belong to the next-class planner: degree track, chosen class, planned grades.
+export const EMPTY_DEPT_DATA = { grades: {}, moved: {}, hidden: [], custom: [], subjects: null, track: "hons", goal: null, targets: {} };
 
 export function loadState() {
   try {
@@ -38,6 +39,9 @@ export function sanitize(input) {
       hidden: Array.isArray(d.hidden) ? d.hidden.filter((x) => typeof x === "string") : [],
       custom: Array.isArray(d.custom) ? d.custom.filter((c) => c && typeof c.id === "string") : [],
       subjects: Array.isArray(d.subjects) ? d.subjects : null,
+      track: d.track === "bsc" ? "bsc" : "hons",
+      goal: typeof d.goal === "string" ? d.goal : null,
+      targets: isPlainObject(d.targets) ? d.targets : {},
     };
   }
   return { version: 1, dept: typeof input.dept === "string" ? input.dept : null, data };

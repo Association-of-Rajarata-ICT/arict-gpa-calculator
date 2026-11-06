@@ -8,6 +8,7 @@ import { EMPTY_DEPT_DATA, EMPTY_STATE, loadState, saveProfile, saveState } from 
 import DepartmentPicker from "./DepartmentPicker";
 import SemesterCard from "./SemesterCard";
 import SummaryPanel from "./SummaryPanel";
+import PlannerPanel from "./PlannerPanel";
 import { scrollToId } from "@/lib/motion";
 
 // three.js is large; it loads after the page is interactive and never on the server.
@@ -95,6 +96,24 @@ export default function Calculator({ intro }) {
         return { ...d, subjects: next };
       });
     },
+    // Next-class planner.
+    setTrack(track) {
+      update((d) => ({ ...d, track }));
+    },
+    setGoal(goal) {
+      update((d) => ({ ...d, goal }));
+    },
+    setTarget(id, grade) {
+      update((d) => {
+        const targets = { ...(d.targets || {}) };
+        if (grade) targets[id] = grade;
+        else delete targets[id];
+        return { ...d, targets };
+      });
+    },
+    resetTargets() {
+      update((d) => ({ ...d, targets: {} }));
+    },
     resetDept() {
       setState((s) => {
         const data = { ...s.data };
@@ -144,84 +163,87 @@ export default function Calculator({ intro }) {
         ) : !dept ? (
           <EmptyState />
         ) : (
-          <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
-            <div className="min-w-0">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <p className="text-[13px] font-medium text-muted">{dept.programme}</p>
-                  <h2 className="mt-1 font-display text-2xl font-bold tracking-[-0.03em] text-ink sm:text-3xl">
-                    {dept.name}
-                  </h2>
+          <>
+            <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+              <div className="min-w-0">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-[13px] font-medium text-muted">{dept.programme}</p>
+                    <h2 className="mt-1 font-display text-2xl font-bold tracking-[-0.03em] text-ink sm:text-3xl">
+                      {dept.name}
+                    </h2>
+                  </div>
+                  <YearTabs year={year} onChange={setYear} terms={terms} />
                 </div>
-                <YearTabs year={year} onChange={setYear} terms={terms} />
+
+                {dept.subjects.length > 1 && (
+                  <div className="mt-5 flex flex-wrap items-center gap-2">
+                    <span className="mr-1 text-[13px] font-medium text-muted">Your subjects</span>
+                    {dept.subjects.map((s) => {
+                      const on = enabledSubjects.includes(s.prefix);
+                      return (
+                        <button
+                          key={s.prefix}
+                          type="button"
+                          onClick={() => actions.toggleSubject(s.prefix)}
+                          aria-pressed={on}
+                          className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors ${
+                            on
+                              ? "border-ink bg-ink text-paper"
+                              : "border-line-strong bg-surface text-muted hover:border-ink/40 hover:text-ink"
+                          }`}
+                        >
+                          <span className="font-mono text-[11px] opacity-70">{s.prefix}</span>
+                          {s.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div key={`${dept.id}-${year}`} className="rise-children mt-6 grid gap-6">
+                  {yearTerms.map((t) => (
+                    <SemesterCard
+                      key={`${dept.id}-${t.year}-${t.semester}`}
+                      term={t}
+                      courses={courses.filter((c) => c.year === t.year && c.semester === t.semester)}
+                      hidden={hidden}
+                      grades={data.grades}
+                      actions={actions}
+                      existingCodes={existingCodes}
+                    />
+                  ))}
+                </div>
               </div>
 
-              {dept.subjects.length > 1 && (
-                <div className="mt-5 flex flex-wrap items-center gap-2">
-                  <span className="mr-1 text-[13px] font-medium text-muted">Your subjects</span>
-                  {dept.subjects.map((s) => {
-                    const on = enabledSubjects.includes(s.prefix);
-                    return (
-                      <button
-                        key={s.prefix}
-                        type="button"
-                        onClick={() => actions.toggleSubject(s.prefix)}
-                        aria-pressed={on}
-                        className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors ${
-                          on
-                            ? "border-ink bg-ink text-paper"
-                            : "border-line-strong bg-surface text-muted hover:border-ink/40 hover:text-ink"
-                        }`}
-                      >
-                        <span className="font-mono text-[11px] opacity-70">{s.prefix}</span>
-                        {s.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              <div key={`${dept.id}-${year}`} className="rise-children mt-6 grid gap-6">
-                {yearTerms.map((t) => (
-                  <SemesterCard
-                    key={`${dept.id}-${t.year}-${t.semester}`}
-                    term={t}
-                    courses={courses.filter((c) => c.year === t.year && c.semester === t.semester)}
-                    hidden={hidden}
-                    grades={data.grades}
-                    actions={actions}
-                    existingCodes={existingCodes}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* On phones the summary sits below every semester, so keep the overall GPA in view. */}
-            <a
-              href="#summary"
-              className="fixed inset-x-3 bottom-3 z-40 flex items-center justify-between gap-3 rounded-full bg-[#0b0b0b] py-2 pr-2 pl-5 text-white dark:bg-surface shadow-[0_12px_30px_-12px_rgb(0_0_0/0.6)] ring-1 ring-white/10 lg:hidden"
-            >
-              <span className="text-[12px] font-semibold tracking-[0.08em] text-white/60 uppercase">Overall GPA</span>
-              <span className="flex items-center gap-3">
-                <span className="font-display text-xl font-extrabold tabular-nums">{formatGpa(overall.gpa)}</span>
-                <span className="rounded-full bg-white px-3 py-1 text-[12px] font-bold text-[#0b0b0b]">
-                  {classFor(overall.gpa)?.label.replace("Second Class", "2nd") ?? "Summary"}
+              {/* On phones the summary sits below every semester, so keep the overall GPA in view. */}
+              <a
+                href="#summary"
+                className="fixed inset-x-3 bottom-3 z-40 flex items-center justify-between gap-3 rounded-full bg-[#0b0b0b] py-2 pr-2 pl-5 text-white dark:bg-surface shadow-[0_12px_30px_-12px_rgb(0_0_0/0.6)] ring-1 ring-white/10 lg:hidden"
+              >
+                <span className="text-[12px] font-semibold tracking-[0.08em] text-white/60 uppercase">Overall GPA</span>
+                <span className="flex items-center gap-3">
+                  <span className="font-display text-xl font-extrabold tabular-nums">{formatGpa(overall.gpa)}</span>
+                  <span className="rounded-full bg-white px-3 py-1 text-[12px] font-bold text-[#0b0b0b]">
+                    {classFor(overall.gpa)?.label.replace("Second Class", "2nd") ?? "Summary"}
+                  </span>
                 </span>
-              </span>
-            </a>
+              </a>
 
-            <SummaryPanel
-              dept={dept}
-              overall={overall}
-              terms={terms}
-              onJump={(y) => {
-                setYear(y);
-                scrollToId("calculator");
-              }}
-              state={state}
-              actions={actions}
-            />
-          </div>
+              <SummaryPanel
+                dept={dept}
+                overall={overall}
+                terms={terms}
+                onJump={(y) => {
+                  setYear(y);
+                  scrollToId("calculator");
+                }}
+                state={state}
+                actions={actions}
+              />
+            </div>
+            <PlannerPanel courses={active} data={data} actions={actions} />
+          </>
         )}
       </section>
     </>

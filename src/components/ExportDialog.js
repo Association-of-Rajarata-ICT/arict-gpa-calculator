@@ -3,16 +3,41 @@
 import { useEffect, useRef, useState } from "react";
 import { FileDown, LoaderCircle, X } from "lucide-react";
 import { loadProfile, saveProfile } from "@/lib/storage";
+import { formatRegNo, parseRegNo, prefixesFor, regNoError } from "@/lib/regno";
 
 // Asks for an optional name and registration number before the PDF is built.
 // Mounted only while open, so it reads the remembered details fresh each time.
-export default function ExportDialog({ deptName, onExport, onClose }) {
+export default function ExportDialog({ deptId, deptName, onExport, onClose }) {
   const ref = useRef(null);
+  const numberRef = useRef(null);
+  const prefixes = prefixesFor(deptId);
   const [initial] = useState(loadProfile);
+  // A remembered number fills the fields when its prefix fits this department.
+  const [saved] = useState(() => {
+    const p = parseRegNo(initial.regNo);
+    return p && prefixes.includes(p.prefix) ? p : null;
+  });
   const [name, setName] = useState(initial.name);
-  const [regNo, setRegNo] = useState(initial.regNo);
+  const [prefix, setPrefix] = useState(saved?.prefix ?? prefixes[0]);
+  const [year, setYear] = useState(saved?.year ?? "");
+  const [number, setNumber] = useState(saved?.number ?? "");
+  const [regError, setRegError] = useState(null);
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
+
+  const regFilled = Boolean(year || number);
+  const regNo = regFilled && !regNoError({ year, number }) ? formatRegNo({ prefix, year, number }) : "";
+
+  // Pasting a whole number, like ICT/2022/074, into either box splits it across the fields.
+  function pasteWhole(e) {
+    const p = parseRegNo(e.clipboardData.getData("text"));
+    if (!p) return;
+    e.preventDefault();
+    if (prefixes.includes(p.prefix)) setPrefix(p.prefix);
+    setYear(p.year);
+    setNumber(p.number);
+    setRegError(null);
+  }
 
   useEffect(() => {
     const d = ref.current;
@@ -20,10 +45,15 @@ export default function ExportDialog({ deptName, onExport, onClose }) {
   }, []);
 
   async function run(withDetails) {
+    if (withDetails) {
+      const problem = regNoError({ year, number });
+      setRegError(problem);
+      if (problem) return;
+    }
     setBusy(withDetails ? "details" : "skip");
     setError(null);
     try {
-      const details = withDetails ? { name: name.trim(), regNo: regNo.trim() } : {};
+      const details = withDetails ? { name: name.trim(), regNo } : {};
       if (withDetails) saveProfile(details);
       await onExport(details);
       onClose();
@@ -87,21 +117,88 @@ export default function ExportDialog({ deptName, onExport, onClose }) {
               className="h-11 rounded-xl border border-line-strong bg-paper px-3.5 text-[14px] text-ink outline-none placeholder:text-muted/70 focus:border-brand focus:ring-3 focus:ring-brand/15"
             />
           </label>
-          <label className="grid gap-1.5">
-            <span className="text-[13px] font-semibold text-ink">
+          <fieldset className="grid gap-1.5">
+            <legend className="mb-1.5 text-[13px] font-semibold text-ink">
               Registration number <span className="font-normal text-muted">(optional)</span>
-            </span>
-            <input
-              value={regNo}
-              onChange={(e) => setRegNo(e.target.value)}
-              maxLength={30}
-              autoComplete="off"
-              placeholder="e.g. 2021/ICT/045"
-              className="h-11 rounded-xl border border-line-strong bg-paper px-3.5 font-mono text-[14px] text-ink outline-none placeholder:font-sans placeholder:text-muted/70 focus:border-brand focus:ring-3 focus:ring-brand/15"
-            />
-          </label>
+            </legend>
+            <div
+              className={`flex h-11 items-center rounded-xl border bg-paper font-mono text-[14px] text-ink transition-shadow focus-within:border-brand focus-within:ring-3 focus-within:ring-brand/15 ${
+                regError ? "border-brand" : "border-line-strong"
+              }`}
+            >
+              {prefixes.length > 1 ? (
+                <div className="flex h-full items-center gap-0.5 pl-1.5" role="radiogroup" aria-label="Stream">
+                  {prefixes.map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      role="radio"
+                      aria-checked={prefix === p}
+                      onClick={() => setPrefix(p)}
+                      className={`h-8 rounded-lg px-2 font-semibold transition-colors ${
+                        prefix === p ? "bg-ink text-paper" : "text-muted hover:text-ink"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <span className="pl-3.5 font-semibold" aria-label={`Prefix ${prefix}`}>
+                  {prefix}
+                </span>
+              )}
+              <span className="px-1.5 text-muted" aria-hidden>
+                /
+              </span>
+              <input
+                value={year}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/\D/g, "").slice(0, 4);
+                  setYear(v);
+                  setRegError(null);
+                  if (v.length === 4) numberRef.current?.focus();
+                }}
+                onPaste={pasteWhole}
+                inputMode="numeric"
+                autoComplete="off"
+                aria-label="Intake year"
+                placeholder="2022"
+                className="w-[3.4rem] bg-transparent text-center outline-none placeholder:text-muted/50"
+              />
+              <span className="px-1.5 text-muted" aria-hidden>
+                /
+              </span>
+              <input
+                ref={numberRef}
+                value={number}
+                onChange={(e) => {
+                  setNumber(e.target.value.replace(/\D/g, "").slice(0, 3));
+                  setRegError(null);
+                }}
+                onBlur={() => number && setNumber(number.padStart(3, "0"))}
+                onKeyDown={(e) => e.key === "Backspace" && !number && e.currentTarget.previousElementSibling?.previousElementSibling?.focus()}
+                onPaste={pasteWhole}
+                inputMode="numeric"
+                autoComplete="off"
+                aria-label="Number"
+                placeholder="074"
+                className="w-[2.8rem] bg-transparent text-center outline-none placeholder:text-muted/50"
+              />
+            </div>
+            {regError ? (
+              <p role="alert" className="text-[12px] font-medium text-brand">
+                {regError}
+              </p>
+            ) : (
+              <p className="text-[12px] text-muted">
+                {prefixes.length > 1 ? `Choose your stream, then your intake year and number. ` : ""}
+                Prints as <span className="font-mono font-semibold text-ink">{regNo || formatRegNo({ prefix, year: year || "2022", number: number || "074" })}</span>
+              </p>
+            )}
+          </fieldset>
           <p className="text-[12px] leading-relaxed text-muted">
-            Use English letters so they print correctly. They stay on this device and are filled in next time.
+            Use English letters for your name so it prints correctly. Both stay on this device and are filled in next time.
           </p>
           {error && (
             <p role="alert" className="text-[13px] font-medium text-brand">

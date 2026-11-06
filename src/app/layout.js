@@ -29,19 +29,17 @@ export const metadata = {
 };
 
 export const viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0b" },
-  ],
+  themeColor: "#0a0a0b",
 };
 
-// Applies the saved (or system) theme before first paint so there is no light/dark flash,
+// Dark is the default for everyone, whatever their system setting; only choosing light with the toggle
+// changes it. Applied before first paint so there is no flash,
 // and marks whether motion is allowed so animated elements start hidden instead of flashing.
-const themeScript = `(function(){try{var t=localStorage.getItem("arict-theme");if(t!=="light"&&t!=="dark"){t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}var r=document.documentElement;if(t==="dark")r.classList.add("dark");if(!matchMedia("(prefers-reduced-motion: reduce)").matches)r.classList.add("motion");}catch(e){}})();`;
+const themeScript = `(function(){try{var r=document.documentElement;r.classList.toggle("dark",localStorage.getItem("arict-theme")!=="light");if(!matchMedia("(prefers-reduced-motion: reduce)").matches)r.classList.add("motion");}catch(e){}})();`;
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en-LK" className={`${inter.variable} ${manrope.variable} ${jetbrains.variable} ${instrument.variable}`} suppressHydrationWarning>
+    <html lang="en-LK" className={`dark ${inter.variable} ${manrope.variable} ${jetbrains.variable} ${instrument.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>

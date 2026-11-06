@@ -152,7 +152,7 @@ export default function SummaryPanel({ dept, overall, terms, onJump, state, acti
           </p>
         )}
       </div>
-      {exporting && <ExportDialog deptName={dept.name} onExport={exportPdf} onClose={() => setExporting(false)} />}
+      {exporting && <ExportDialog deptId={dept.id} deptName={dept.name} onExport={exportPdf} onClose={() => setExporting(false)} />}
     </aside>
   );
 }

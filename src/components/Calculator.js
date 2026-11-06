@@ -1,12 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { DEPARTMENTS } from "@/data/departments";
 import { buildCourses, classFor, computeGpa, computeTerms, formatGpa, getDepartment, latestGradedYear, YEARS } from "@/lib/gpa";
 import { EMPTY_DEPT_DATA, EMPTY_STATE, loadState, saveProfile, saveState } from "@/lib/storage";
 import DepartmentPicker from "./DepartmentPicker";
 import SemesterCard from "./SemesterCard";
 import SummaryPanel from "./SummaryPanel";
+import { scrollToId } from "@/lib/motion";
+
+// three.js is large; it loads after the page is interactive and never on the server.
+const HeroScene = dynamic(() => import("./motion/HeroScene"), { ssr: false });
 
 export default function Calculator({ intro }) {
   const [state, setState] = useState(EMPTY_STATE);
@@ -103,7 +108,7 @@ export default function Calculator({ intro }) {
       const target = next.dept || state.dept;
       setYear(latestGradedYear(next.data[target] || state.data[target]));
       if (profile && (profile.name || profile.regNo)) saveProfile(profile);
-      setTimeout(() => document.getElementById("calculator")?.scrollIntoView({ behavior: "smooth" }), 80);
+      setTimeout(() => scrollToId("calculator"), 80);
     },
   };
 
@@ -113,20 +118,14 @@ export default function Calculator({ intro }) {
 
   return (
     <>
-      {/* The hero is always dark, like arict.lk: the `dark` class re-scopes every colour token inside it. */}
-      <section className="dark relative isolate overflow-hidden border-b border-line bg-[#070708]">
-        <div className="hero-grid pointer-events-none absolute inset-0 -z-10" aria-hidden />
-        <div
-          className="pointer-events-none absolute top-[-16rem] left-[8%] -z-10 h-[30rem] w-[44rem] rounded-full bg-brand/20 blur-3xl"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute right-[-10rem] bottom-[-14rem] -z-10 h-[26rem] w-[40rem] rounded-full bg-[#a00000]/25 blur-3xl"
-          aria-hidden
-        />
-        <div className="container-page pt-32 pb-14 sm:pt-40 sm:pb-20">
+      {/* The hero follows the site theme. A WebGL horizon rises behind the picker; a CSS glow stands in without WebGL. */}
+      <section className="relative isolate overflow-hidden border-b border-line bg-paper">
+        <div className="hero-grid pointer-events-none absolute inset-0 -z-20" aria-hidden />
+        <div className="hero-fallback-glow pointer-events-none absolute inset-x-0 bottom-0 -z-20 h-[70%]" aria-hidden />
+        <HeroScene anchorId="departments" />
+        <div className="container-page pt-36 pb-16 sm:pt-44 sm:pb-24">
           {intro}
-          <div className="mt-12 sm:mt-14">
+          <div data-hero="5" className="mt-28 sm:mt-36">
             <DepartmentPicker
               departments={DEPARTMENTS}
               selected={state.dept}
@@ -182,7 +181,7 @@ export default function Calculator({ intro }) {
                 </div>
               )}
 
-              <div className="mt-6 grid gap-6">
+              <div key={`${dept.id}-${year}`} className="rise-children mt-6 grid gap-6">
                 {yearTerms.map((t) => (
                   <SemesterCard
                     key={`${dept.id}-${t.year}-${t.semester}`}
@@ -200,7 +199,7 @@ export default function Calculator({ intro }) {
             {/* On phones the summary sits below every semester, so keep the overall GPA in view. */}
             <a
               href="#summary"
-              className="fixed inset-x-3 bottom-3 z-40 flex items-center justify-between gap-3 rounded-full bg-[#0b0b0b] py-2 pr-2 pl-5 text-white shadow-[0_12px_30px_-12px_rgb(0_0_0/0.6)] ring-1 ring-white/10 lg:hidden"
+              className="fixed inset-x-3 bottom-3 z-40 flex items-center justify-between gap-3 rounded-full bg-[#0b0b0b] py-2 pr-2 pl-5 text-white dark:bg-surface shadow-[0_12px_30px_-12px_rgb(0_0_0/0.6)] ring-1 ring-white/10 lg:hidden"
             >
               <span className="text-[12px] font-semibold tracking-[0.08em] text-white/60 uppercase">Overall GPA</span>
               <span className="flex items-center gap-3">
@@ -217,7 +216,7 @@ export default function Calculator({ intro }) {
               terms={terms}
               onJump={(y) => {
                 setYear(y);
-                document.getElementById("calculator")?.scrollIntoView({ behavior: "smooth" });
+                scrollToId("calculator");
               }}
               state={state}
               actions={actions}

@@ -17,13 +17,13 @@ export default function DepartmentPicker({ departments, selected, onSelect, onRe
     <div id="departments" className="relative scroll-mt-24">
       {/* Red glow behind the panel draws the eye; it breathes until a department is chosen. */}
       <div
-        className={`pointer-events-none absolute -inset-x-6 -inset-y-4 -z-10 rounded-[40px] bg-brand/15 blur-2xl transition-opacity duration-700 ${
+        className={`pointer-events-none absolute -inset-x-6 -inset-y-4 -z-10 rounded-[40px] bg-brand/10 blur-2xl transition-opacity duration-700 ${
           waiting ? "animate-pulse opacity-100" : "opacity-50"
         }`}
         aria-hidden
       />
 
-      <div className="relative rounded-[28px] border border-white/12 bg-white/[0.035] p-2 shadow-[0_40px_80px_-40px_rgb(0_0_0/0.9)] backdrop-blur-md sm:p-2.5">
+      <div className="relative rounded-[28px] border border-line bg-surface/70 p-2 shadow-[0_40px_80px_-40px_rgb(0_0_0/0.35)] backdrop-blur-xl sm:p-2.5 dark:bg-[#0e0e10]/85 dark:shadow-[0_40px_80px_-40px_rgb(0_0_0/0.9)]">
         <div className="pointer-events-none absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-brand to-transparent" aria-hidden />
 
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-3 pt-3 pb-4 sm:px-4 sm:pt-4 sm:pb-5">
@@ -40,7 +40,7 @@ export default function DepartmentPicker({ departments, selected, onSelect, onRe
           {selected ? (
             <a
               href="#calculator"
-              className="group inline-flex h-9 items-center gap-1.5 rounded-full bg-white px-4 text-[13.5px] font-semibold text-[#0b0b0b] transition-colors hover:bg-white/85"
+              className="group inline-flex h-9 items-center gap-1.5 rounded-full bg-ink px-4 text-[13.5px] font-semibold text-paper transition-colors hover:bg-brand hover:text-white"
             >
               Enter your grades
               <ArrowDown className="size-3.5 transition-transform group-hover:translate-y-0.5" aria-hidden />
@@ -70,14 +70,14 @@ export default function DepartmentPicker({ departments, selected, onSelect, onRe
                 onClick={() => onSelect(d.id)}
                 className={`group relative flex min-h-36 flex-col justify-between overflow-hidden rounded-[20px] border p-4 text-left transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:p-5 ${
                   isOn
-                    ? "border-white bg-white text-[#0b0b0b] shadow-[0_24px_50px_-24px_rgb(229_72_77/0.55)]"
-                    : "border-white/[0.08] bg-surface/80 text-ink hover:-translate-y-0.5 hover:border-brand/50 hover:bg-surface hover:shadow-[0_18px_40px_-24px_rgb(229_72_77/0.5)]"
+                    ? "border-ink bg-ink text-paper shadow-[0_24px_50px_-24px_rgb(229_72_77/0.55)]"
+                    : "border-line bg-surface/80 text-ink hover:-translate-y-1 hover:border-brand/50 hover:bg-surface hover:shadow-[0_18px_40px_-24px_rgb(229_72_77/0.5)]"
                 } ${i === 4 ? "col-span-2 sm:col-span-1" : ""}`}
               >
                 <div className="flex items-start justify-between">
                   <span
                     className={`inline-flex size-10 items-center justify-center rounded-xl transition-colors ${
-                      isOn ? "bg-[#a00000] text-white" : "bg-white/[0.06] text-ink group-hover:bg-brand group-hover:text-white"
+                      isOn ? "bg-[#a00000] text-white" : "bg-ink/[0.05] text-ink group-hover:bg-brand group-hover:text-white dark:bg-white/[0.06]"
                     }`}
                   >
                     <Icon className="size-[19px]" aria-hidden />
@@ -92,7 +92,7 @@ export default function DepartmentPicker({ departments, selected, onSelect, onRe
                 </div>
                 <div className="mt-6">
                   <span className="block font-display text-[15.5px] leading-tight font-bold tracking-tight">{d.name}</span>
-                  <span className={`mt-1 block text-xs ${isOn ? "text-[#0b0b0b]/55" : "text-muted"}`}>
+                  <span className={`mt-1 block text-xs ${isOn ? "text-paper/60" : "text-muted"}`}>
                     {saved && saved.gpa != null
                       ? `Saved · GPA ${formatGpa(saved.gpa)}`
                       : `${d.subjects.length > 1 ? `${d.subjects.length} subjects` : d.subjects[0].label}`}
@@ -117,7 +117,7 @@ export default function DepartmentPicker({ departments, selected, onSelect, onRe
           <RestoreButton
             onRestore={onRestore}
             onMessage={setMessage}
-            className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 self-start rounded-full border border-white/15 bg-white/[0.04] px-4 text-[13px] font-semibold text-ink transition-colors hover:border-brand/60 hover:bg-brand/10 disabled:opacity-60 sm:self-auto"
+            className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 self-start rounded-full border border-line-strong bg-surface px-4 text-[13px] font-semibold text-ink transition-colors hover:border-brand/60 hover:bg-brand/10 dark:bg-white/[0.04] disabled:opacity-60 sm:self-auto"
           >
             <FileUp className="size-4" aria-hidden /> Restore from PDF
           </RestoreButton>

@@ -6,6 +6,7 @@ import { classFor, formatGpa, nextClass, ROMAN } from "@/lib/gpa";
 import { createReport, downloadBytes } from "@/lib/report";
 import ExportDialog from "./ExportDialog";
 import RestoreButton from "./RestoreButton";
+import AnimatedNumber from "./motion/AnimatedNumber";
 
 export default function SummaryPanel({ dept, overall, terms, onJump, state, actions }) {
   const [confirmReset, setConfirmReset] = useState(false);
@@ -30,15 +31,15 @@ export default function SummaryPanel({ dept, overall, terms, onJump, state, acti
 
   return (
     <aside id="summary" className="scroll-mt-24 lg:sticky lg:top-24" aria-label="GPA summary">
-      <div className="relative overflow-hidden rounded-3xl bg-[#0b0b0b] p-6 text-white shadow-[0_30px_60px_-30px_rgb(0_0_0/0.55)] ring-1 ring-white/10">
+      <div className="relative overflow-hidden rounded-3xl bg-[#0b0b0b] p-6 text-white dark:bg-surface shadow-[0_30px_60px_-30px_rgb(0_0_0/0.55)] ring-1 ring-white/10">
         <div className="pointer-events-none absolute -top-24 -right-20 size-64 rounded-full bg-[#a00000]/45 blur-3xl" aria-hidden />
         <div className="relative">
           <p className="text-[12px] font-semibold tracking-[0.1em] text-white/55 uppercase">Overall GPA</p>
           <p className="mt-2 font-display text-7xl leading-none font-extrabold tracking-[-0.04em] tabular-nums" aria-live="polite">
-            {formatGpa(overall.gpa)}
+            <AnimatedNumber value={overall.gpa} format={formatGpa} />
           </p>
           <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-white/10" aria-hidden>
-            <div className="h-full rounded-full bg-[#e5484d] transition-[width] duration-500" style={{ width: `${pct}%` }} />
+            <div className="h-full rounded-full bg-[#e5484d] transition-[width] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]" style={{ width: `${pct}%` }} />
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             {band ? (
@@ -158,7 +159,7 @@ export default function SummaryPanel({ dept, overall, terms, onJump, state, acti
 
 function Stat({ label, value }) {
   return (
-    <div className="bg-[#0b0b0b] px-4 py-3">
+    <div className="bg-[#0b0b0b] px-4 py-3 dark:bg-surface">
       <dt className="text-[11.5px] text-white/50">{label}</dt>
       <dd className="mt-0.5 font-display text-xl font-bold tabular-nums">{value}</dd>
     </div>

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "lenis/dist/lenis.css";
 
 /* Dark mode follows the .dark class on <html> (set before first paint in layout.js). */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -54,6 +55,7 @@
   --color-good: var(--good);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-manrope), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-instrument), ui-serif, Georgia, serif;
   --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -93,6 +95,55 @@ body {
     linear-gradient(to bottom, var(--line) 1px, transparent 1px);
   background-size: 44px 44px;
   mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 30%, transparent 75%);
+}
+
+/* Without WebGL the horizon is a soft glow; with it, the canvas sits on top and carries the effect. */
+.hero-fallback-glow {
+  background: radial-gradient(60% 55% at 50% 100%, color-mix(in oklab, var(--brand) 22%, transparent), transparent 70%);
+}
+
+/* Words of an animated headline: each clips its own rise. */
+.split-word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding: 0 0.04em 0.12em;
+  margin: 0 -0.04em -0.12em;
+}
+.split-inner {
+  display: inline-block;
+  will-change: transform;
+}
+
+/* Set on <html> before paint when motion is allowed: reveal targets wait for GSAP instead of flashing. */
+.motion [data-hero],
+.motion [data-reveal],
+.motion [data-reveal-stagger] > * {
+  visibility: hidden;
+}
+
+/* Semester cards rise in when the department or year changes. */
+.rise-children > * {
+  animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.rise-children > :nth-child(2) {
+  animation-delay: 0.08s;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+
+/* Theme switch: the new theme wipes in as a circle from the toggle (see Header). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  z-index: 1;
 }
 
 /* Native select with a custom chevron, so the grade picker stays accessible on every device. */

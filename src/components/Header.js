@@ -1,22 +1,99 @@
 "use client";
 
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Moon, Sun } from "lucide-react";
+import { ArrowUpRight, Menu, Moon, Sun, X } from "lucide-react";
+import { reducedMotion, ScrollTrigger } from "@/lib/motion";
 
 const NAV = [
-  { href: "#departments", label: "Calculator" },
-  { href: "#report", label: "PDF report" },
-  { href: "#grading", label: "Grading" },
-  { href: "https://papers.arict.lk", label: "Past Papers", external: true },
+  { href: "#departments", id: "departments", label: "Calculator" },
+  { href: "#report", id: "report", label: "PDF report" },
+  { href: "#grading", id: "grading", label: "Grading" },
+  { href: "#faq", id: "faq", label: "FAQ" },
 ];
+const SECTIONS = ["departments", "calculator", "report", "grading", "faq"];
 
-export default function Header() {
-  function toggleTheme() {
-    const dark = document.documentElement.classList.toggle("dark");
+const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
+// Switches theme with a circular wipe from the toggle, where the browser supports view transitions.
+function switchTheme(event) {
+  const root = document.documentElement;
+  const apply = () => {
+    const dark = root.classList.toggle("dark");
     try {
       localStorage.setItem("arict-theme", dark ? "dark" : "light");
     } catch {}
-  }
+  };
+  if (!document.startViewTransition || reducedMotion()) return apply();
+
+  const x = event?.clientX ?? window.innerWidth - 40;
+  const y = event?.clientY ?? 40;
+  const r = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+  const t = document.startViewTransition(apply);
+  t.ready.then(() => {
+    root.animate(
+      { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${r}px at ${x}px ${y}px)`] },
+      { duration: 650, easing: "cubic-bezier(0.65, 0, 0.35, 1)", pseudoElement: "::view-transition-new(root)" },
+    );
+  });
+}
+
+export default function Header() {
+  const [active, setActive] = useState(null);
+  const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const [open, setOpen] = useState(false);
+  const navRef = useRef(null);
+  const progressRef = useRef(null);
+  const [pill, setPill] = useState(null);
+
+  // Compact on scroll, tuck away while reading down, return on any scroll up.
+  useEffect(() => {
+    const st = ScrollTrigger.create({
+      start: 0,
+      end: "max",
+      onUpdate: (self) => {
+        const y = self.scroll();
+        if (progressRef.current) progressRef.current.style.transform = `scaleX(${self.progress})`;
+        setScrolled(y > 24);
+        if (y < 200) setHidden(false);
+        else if (Math.abs(self.getVelocity()) > 40) setHidden(self.direction === 1);
+      },
+    });
+    return () => st.kill();
+  }, []);
+
+  // Scroll spy: the section crossing the upper third of the screen is the current one.
+  useEffect(() => {
+    const seen = new Map();
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => seen.set(e.target.id, e.isIntersecting));
+        const current = SECTIONS.find((id) => seen.get(id));
+        setActive(current === "calculator" ? "departments" : current ?? null);
+      },
+      { rootMargin: "-30% 0px -60% 0px" },
+    );
+    SECTIONS.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) io.observe(el);
+    });
+    return () => io.disconnect();
+  }, []);
+
+  // The highlight slides under the active link.
+  useIsoLayoutEffect(() => {
+    const nav = navRef.current;
+    const link = active && nav?.querySelector(`[data-id="${active}"]`);
+    setPill(link ? { x: link.offsetLeft, w: link.offsetWidth } : null);
+  }, [active]);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [open]);
 
   return (
     <>
@@ -26,49 +103,123 @@ export default function Header() {
       >
         Skip to calculator
       </a>
-      <div className="fixed inset-x-0 top-0 z-[60] h-[2px] bg-brand" aria-hidden />
-      <header className="fixed inset-x-0 top-3 z-50 px-3 sm:top-4 sm:px-4">
-        <div className="mx-auto flex max-w-[52rem] items-center justify-between gap-2 rounded-full border border-black/5 bg-surface/75 py-1.5 pr-1.5 pl-4 shadow-[0_6px_24px_-14px_rgb(0_0_0/0.25)] backdrop-blur-md sm:pl-5 dark:border-white/10">
-          <Link href="/" className="flex shrink-0 items-center gap-2.5 rounded-md py-1" aria-label="ARICT GPA Calculator, home">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/arict-wordmark.png" alt="ARICT" className="h-[18px] w-auto select-none sm:h-5 dark:hidden" />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/arict-wordmark-light.png" alt="ARICT" className="hidden h-[18px] w-auto select-none sm:h-5 dark:block" />
-            <span className="h-4 w-px bg-line-strong" aria-hidden />
-            <span className="font-display text-[13.5px] font-bold tracking-tight text-ink">GPA</span>
-          </Link>
+      {/* Reading progress along the top edge. */}
+      <div className="fixed inset-x-0 top-0 z-[60] h-[2px]" aria-hidden>
+        <div ref={progressRef} className="h-full origin-left scale-x-0 bg-brand" />
+      </div>
 
-          <nav className="hidden items-center gap-0.5 md:flex" aria-label="Main">
-            {NAV.map((item) => (
+      <header
+        className={`fixed inset-x-0 top-0 z-50 px-3 pt-3 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] sm:px-4 sm:pt-4 ${
+          hidden && !open ? "-translate-y-[120%]" : "translate-y-0"
+        }`}
+      >
+        <div
+          className={`relative mx-auto max-w-[60rem] rounded-[22px] border transition-[background-color,border-color,box-shadow,max-width] duration-500 ${
+            scrolled || open
+              ? "max-w-[56rem] border-line bg-surface/80 shadow-[0_16px_40px_-20px_rgb(0_0_0/0.35)] backdrop-blur-xl backdrop-saturate-150"
+              : "border-transparent bg-surface/40 backdrop-blur-md"
+          }`}
+        >
+          <div className="flex h-14 items-center justify-between gap-3 pr-2 pl-4 sm:pl-5">
+            <Link href="/" className="flex shrink-0 items-center gap-2.5 rounded-md py-1" aria-label="ARICT GPA Calculator, home">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/brand/arict-wordmark.png" alt="ARICT" className="h-[18px] w-auto select-none sm:h-5 dark:hidden" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/brand/arict-wordmark-light.png" alt="ARICT" className="hidden h-[18px] w-auto select-none sm:h-5 dark:block" />
+              <span className="inline-flex items-center rounded-md bg-brand px-1.5 py-0.5 font-display text-[11px] font-extrabold tracking-wide text-white">
+                GPA
+              </span>
+            </Link>
+
+            <nav ref={navRef} className="relative hidden items-center md:flex" aria-label="Main">
+              <span
+                className="absolute inset-y-0 left-0 my-auto h-9 rounded-full bg-ink/[0.06] transition-[transform,width,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] dark:bg-white/[0.08]"
+                style={{ width: pill?.w ?? 0, transform: `translateX(${pill?.x ?? 0}px)`, opacity: pill ? 1 : 0 }}
+                aria-hidden
+              />
+              {NAV.map((item) => (
+                <a
+                  key={item.id}
+                  href={item.href}
+                  data-id={item.id}
+                  aria-current={active === item.id ? "true" : undefined}
+                  className={`relative rounded-full px-4 py-2 text-[13.5px] font-medium transition-colors ${
+                    active === item.id ? "text-ink" : "text-muted hover:text-ink"
+                  }`}
+                >
+                  {item.label}
+                </a>
+              ))}
               <a
-                key={item.label}
-                href={item.href}
-                {...(item.external ? { target: "_blank", rel: "noopener" } : {})}
-                className="inline-flex items-center gap-1 rounded-full px-3.5 py-2 text-[13.5px] font-medium text-ink/65 transition-colors hover:text-ink"
+                href="https://papers.arict.lk"
+                target="_blank"
+                rel="noopener"
+                className="relative inline-flex items-center gap-1 rounded-full px-4 py-2 text-[13.5px] font-medium text-muted transition-colors hover:text-ink"
               >
-                {item.label}
-                {item.external && <ArrowUpRight className="size-3.5 opacity-60" aria-hidden />}
+                Past Papers <ArrowUpRight className="size-3.5 opacity-60" aria-hidden />
               </a>
-            ))}
-          </nav>
+            </nav>
 
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="inline-flex size-9 items-center justify-center rounded-full text-ink/75 transition-colors hover:bg-black/5 hover:text-ink dark:hover:bg-white/10"
-              aria-label="Toggle dark mode"
-            >
-              <Moon className="size-[18px] dark:hidden" aria-hidden />
-              <Sun className="hidden size-[18px] dark:block" aria-hidden />
-            </button>
-            <a
-              href="https://arict.lk"
-              className="group inline-flex h-9 items-center gap-1.5 rounded-full bg-ink px-4 text-[13.5px] font-medium text-paper transition-colors hover:bg-ink-soft"
-            >
-              arict.lk
-              <ArrowUpRight className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden />
-            </a>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={switchTheme}
+                className="group relative inline-flex size-10 items-center justify-center overflow-hidden rounded-full text-ink/80 transition-colors hover:bg-ink/[0.06] hover:text-ink dark:hover:bg-white/10"
+                aria-label="Toggle dark mode"
+              >
+                <Moon className="size-[18px] transition-transform duration-500 group-hover:-rotate-12 dark:translate-y-8 dark:rotate-90" aria-hidden />
+                <Sun className="absolute size-[18px] -translate-y-8 -rotate-90 transition-transform duration-500 group-hover:rotate-45 dark:translate-y-0 dark:rotate-0" aria-hidden />
+              </button>
+              <a
+                href="https://arict.lk"
+                data-magnetic
+                className="group hidden h-10 items-center gap-1.5 rounded-full bg-ink px-4 text-[13.5px] font-semibold text-paper transition-colors hover:bg-brand hover:text-white sm:inline-flex"
+              >
+                arict.lk
+                <ArrowUpRight className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden />
+              </a>
+              <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                className="inline-flex size-10 items-center justify-center rounded-full bg-ink text-paper md:hidden"
+                aria-expanded={open}
+                aria-controls="mobile-nav"
+                aria-label={open ? "Close menu" : "Open menu"}
+              >
+                {open ? <X className="size-[18px]" aria-hidden /> : <Menu className="size-[18px]" aria-hidden />}
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile menu folds open inside the same floating card. */}
+          <div
+            id="mobile-nav"
+            className={`grid transition-[grid-template-rows,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] md:hidden ${
+              open ? "grid-rows-[1fr] opacity-100" : "pointer-events-none grid-rows-[0fr] opacity-0"
+            }`}
+            inert={!open}
+          >
+            <nav className="overflow-hidden" aria-label="Mobile">
+              <ul className="grid gap-0.5 border-t border-line px-2 pt-2 pb-3">
+                {[...NAV, { href: "https://papers.arict.lk", id: "papers", label: "Past Papers", external: true }, { href: "https://arict.lk", id: "arict", label: "arict.lk", external: true }].map(
+                  (item, i) => (
+                    <li key={item.id} style={{ transitionDelay: open ? `${60 + i * 40}ms` : "0ms" }} className={`transition-all duration-500 ${open ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"}`}>
+                      <a
+                        href={item.href}
+                        onClick={() => setOpen(false)}
+                        {...(item.external ? { target: "_blank", rel: "noopener" } : {})}
+                        className={`flex items-center justify-between rounded-2xl px-3 py-3 font-display text-[17px] font-bold tracking-tight transition-colors hover:bg-mist ${
+                          active === item.id ? "text-brand" : "text-ink"
+                        }`}
+                      >
+                        {item.label}
+                        {item.external ? <ArrowUpRight className="size-4 text-muted" aria-hidden /> : <span className="font-mono text-[11px] font-medium text-muted">0{i + 1}</span>}
+                      </a>
+                    </li>
+                  ),
+                )}
+              </ul>
+            </nav>
           </div>
         </div>
       </header>

@@ -1,11 +1,14 @@
-import { Inter, JetBrains_Mono, Manrope } from "next/font/google";
+import { Instrument_Serif, Inter, JetBrains_Mono, Manrope } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { DESCRIPTION, KEYWORDS, ORG, SHARE_DESCRIPTION, SHARE_TITLE, SITE_NAME, SITE_URL, TITLE } from "@/lib/site";
+import SmoothScroll from "@/components/motion/SmoothScroll";
+import PageMotion from "@/components/motion/PageMotion";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
 const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains", display: "swap" });
+const instrument = Instrument_Serif({ subsets: ["latin"], weight: "400", style: "italic", variable: "--font-instrument", display: "swap" });
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
@@ -32,17 +35,20 @@ export const viewport = {
   ],
 };
 
-// Applies the saved (or system) theme before first paint so there is no light/dark flash.
-const themeScript = `(function(){try{var t=localStorage.getItem("arict-theme");if(t!=="light"&&t!=="dark"){t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}if(t==="dark")document.documentElement.classList.add("dark");}catch(e){}})();`;
+// Applies the saved (or system) theme before first paint so there is no light/dark flash,
+// and marks whether motion is allowed so animated elements start hidden instead of flashing.
+const themeScript = `(function(){try{var t=localStorage.getItem("arict-theme");if(t!=="light"&&t!=="dark"){t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}var r=document.documentElement;if(t==="dark")r.classList.add("dark");if(!matchMedia("(prefers-reduced-motion: reduce)").matches)r.classList.add("motion");}catch(e){}})();`;
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en-LK" className={`${inter.variable} ${manrope.variable} ${jetbrains.variable}`} suppressHydrationWarning>
+    <html lang="en-LK" className={`${inter.variable} ${manrope.variable} ${jetbrains.variable} ${instrument.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-svh antialiased" suppressHydrationWarning>
         {children}
+        <SmoothScroll />
+        <PageMotion />
         <Analytics />
       </body>
     </html>

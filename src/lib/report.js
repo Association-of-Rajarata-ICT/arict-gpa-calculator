@@ -14,6 +14,7 @@ import {
   GRADES,
   nextClass,
   ROMAN,
+  YEARS,
 } from "@/lib/gpa";
 import { DEPARTMENTS } from "@/data/departments";
 import { EMPTY_DEPT_DATA, sanitize } from "@/lib/storage";
@@ -280,44 +281,191 @@ export async function createReport(state, { name = "", regNo = "" } = {}) {
   });
   y += cardH + 28;
 
-  // ---- semester GPA chart (one series, so no legend; the title names it) ----
-  const chartH = 132;
-  sectionTitle("PROGRESS", "Semester GPA", "Each bar is one semester's credit-weighted GPA, out of 4.00. Dashed lines mark the class bands.", chartH);
-  const plotX = M + 22;
-  const plotW = CW - 22 - 64;
-  const plotTop = y + 6;
-  const plotH = chartH - 30;
+  // ---- semester GPA chart ----
+  // Bars: each semester's GPA, from zero so heights compare honestly. Line: cumulative GPA.
+  // Shaded zones behind are the degree classes, labelled at the right, so each bar reads as a class.
+  const legendH = 16;
+  const headroom = 18; // room above 4.0 for the BEST tag and the cumulative label
+  const plotH = 196;
+  const axisH = 34;
+  const insightH = 46;
+  const chartH = legendH + headroom + plotH + axisH + 14 + insightH;
+  sectionTitle(
+    "PROGRESS",
+    "Semester GPA",
+    "Bars show each semester's GPA out of 4.00. The line is your cumulative GPA. Shaded zones are the degree classes.",
+    chartH,
+  );
+
+  // Legend, top right: two series, both named.
+  {
+    const lt = y + 8;
+    let lx = W - M;
+    const items = [
+      ["Cumulative GPA", "line"],
+      ["Semester GPA", "bar"],
+    ];
+    for (const [label, kind] of items) {
+      lx -= width(label, { size: 7.5 });
+      text(label, lx, lt + 2.5, { size: 7.5, color: C.body });
+      lx -= 6;
+      if (kind === "bar") {
+        rrect(lx - 9, lt - 4.5, 9, 9, 2, { color: C.brand });
+        lx -= 9;
+      } else {
+        line(lx - 16, lt, lx, lt, { color: C.ink, thickness: 1.4 });
+        page.drawCircle({ x: lx - 8, y: H - lt, size: 2.6, color: C.white, borderColor: C.ink, borderWidth: 1.2 });
+        lx -= 16;
+      }
+      lx -= 16;
+    }
+  }
+
+  const plotX = M + 24;
+  const plotW = CW - 24 - 78;
+  const plotTop = y + legendH + headroom + 6;
   const vy = (v) => plotTop + plotH - (v / 4) * plotH;
+
+  // Class zones, faintest for Pass and strongest for First.
+  const ZONE = { "First Class": 0.12, "Second Class (Upper)": 0.08, "Second Class (Lower)": 0.05, Pass: 0.025 };
+  const SHORT = { "First Class": "First Class", "Second Class (Upper)": "2nd Upper", "Second Class (Lower)": "2nd Lower", Pass: "Pass" };
+  CLASSES.forEach((c, i) => {
+    const hi = i === 0 ? 4 : CLASSES[i - 1].min;
+    const top = vy(hi);
+    const h = vy(c.min) - top;
+    rect(plotX, top, plotW, h, { color: C.brand, opacity: ZONE[c.label] ?? 0.04 });
+    line(plotX, vy(c.min), plotX + plotW, vy(c.min), { color: C.brand, opacity: 0.35, thickness: 0.5, dash: [2, 2] });
+    // The label sits in the middle of its zone, outside the plot.
+    const mid = top + h / 2;
+    const name = SHORT[c.label] || c.label;
+    const lx = plotX + plotW + 8;
+    if (h > 20) {
+      text(name, lx, mid - 1, { size: 7, bold: true, color: C.ink });
+      text(`${c.min.toFixed(2)} and above`, lx, mid + 8, { size: 6.2, color: C.muted });
+    } else {
+      text(name, lx, mid + 2.4, { size: 7, bold: true, color: C.ink });
+      text(c.min.toFixed(2), lx + width(name, { size: 7, bold: true }) + 4, mid + 2.4, { size: 6.2, color: C.muted });
+    }
+  });
+
+  // Recessive grid and axis.
   for (let v = 0; v <= 4; v++) {
-    line(plotX, vy(v), plotX + plotW, vy(v), { color: C.line, thickness: v === 0 ? 0.9 : 0.5 });
-    textRight(v.toFixed(1), plotX - 6, vy(v) + 2.5, { size: 6.8, color: C.muted });
+    if (v > 0) line(plotX, vy(v), plotX + plotW, vy(v), { color: C.line, thickness: 0.4 });
+    textRight(v.toFixed(1), plotX - 7, vy(v) + 2.5, { size: 7, color: C.muted });
   }
-  const SHORT = { "First Class": "First", "Second Class (Upper)": "2nd Upper", "Second Class (Lower)": "2nd Lower", Pass: "Pass" };
-  for (const c of CLASSES) {
-    line(plotX, vy(c.min), plotX + plotW, vy(c.min), { color: C.brand, opacity: 0.45, thickness: 0.6, dash: [2, 2] });
-    text(`${SHORT[c.label] || c.label} ${c.min.toFixed(2)}`, plotX + plotW + 6, vy(c.min) + 2.4, { size: 6.5, color: C.muted });
-  }
+
   const slot = plotW / terms.length;
-  const bw = Math.min(24, slot * 0.46);
+  const bw = Math.min(30, slot * 0.52);
   const latest = graded[graded.length - 1];
+  const cx = (i) => plotX + slot * i + slot / 2;
+
   terms.forEach((t, i) => {
-    const cx = plotX + slot * i + slot / 2;
+    const x = cx(i);
     if (t.gpa != null && t.gpa > 0) {
       const h = (t.gpa / 4) * plotH;
-      const r = Math.min(3, h);
+      const r = Math.min(4, h);
       const path = `M0,${h} V${r} Q0,0 ${r},0 H${bw - r} Q${bw},0 ${bw},${r} V${h} Z`;
-      page.drawSvgPath(path, { x: cx - bw / 2, y: H - (plotTop + plotH - h), color: C.brand });
-      if (t === best || t === latest) {
-        const label = formatGpa(t.gpa);
-        text(label, cx - width(label, { size: 7.5, bold: true }) / 2, vy(t.gpa) - 4, { size: 7.5, bold: true, color: C.ink });
-      }
+      page.drawSvgPath(path, { x: x - bw / 2, y: H - (plotTop + plotH - h), color: C.brand });
     } else if (t.gpa == null) {
-      text("—", cx - width("—", { size: 8 }) / 2, plotTop + plotH - 3, { size: 8, color: C.muted, opacity: 0.6 });
+      // Not graded yet: a ghost outline, so empty semesters read as "to come", not as zero.
+      rrect(x - bw / 2, plotTop + plotH - 26, bw, 26, 4, { border: C.line, borderWidth: 0.8 });
+      const nl = "Not yet";
+      text(nl, x - width(nl, { size: 6 }) / 2, plotTop + plotH - 10, { size: 6, color: C.muted });
     }
-    const lab = `Y${t.year} S${ROMAN[t.semester]}`;
-    text(lab, cx - width(lab, { size: 7, bold: true }) / 2, plotTop + plotH + 13, { size: 7, bold: true, color: C.body });
   });
-  y += chartH + 4;
+  line(plotX, vy(0), plotX + plotW, vy(0), { color: C.ink, thickness: 0.8 });
+
+  // Cumulative line over the graded semesters, with ringed dots so it stays readable over the bars.
+  const cum = terms.map((t, i) => ({ t, i })).filter(({ t }) => t.gpa != null && t.cumulative != null);
+  for (let k = 1; k < cum.length; k++) {
+    const a = cum[k - 1];
+    const b = cum[k];
+    line(cx(a.i), vy(a.t.cumulative), cx(b.i), vy(b.t.cumulative), { color: C.white, thickness: 3.6 });
+    line(cx(a.i), vy(a.t.cumulative), cx(b.i), vy(b.t.cumulative), { color: C.ink, thickness: 1.5 });
+  }
+  cum.forEach(({ t, i }) => page.drawCircle({ x: cx(i), y: H - vy(t.cumulative), size: 3, color: C.white, borderColor: C.ink, borderWidth: 1.4 }));
+
+  // Bar values go on top of everything. Each sits inside its bar, below the cumulative dot when the
+  // dot would cover it, and the BEST tag clears both the bar and the dot.
+  terms.forEach((t, i) => {
+    if (t.gpa == null || t.gpa <= 0) return;
+    const x = cx(i);
+    const barTop = vy(t.gpa);
+    const base = plotTop + plotH;
+    const dotY = t.cumulative != null ? vy(t.cumulative) : null;
+    const label = formatGpa(t.gpa);
+    const lo = { size: 8.5, bold: true };
+    let ly = barTop + 14; // baseline
+    if (dotY != null && Math.abs(ly - 3 - dotY) < 10) ly = dotY + 15;
+    if (ly < base - 4) text(label, x - width(label, lo) / 2, ly, { ...lo, color: C.white });
+    else text(label, x - width(label, lo) / 2, barTop - 6, { ...lo, color: C.ink });
+    if (t === best && graded.length > 1) {
+      const tag = "BEST";
+      const tagO = { size: 5.5, bold: true, tracking: 0.8 };
+      const tagW = spacedWidth(tag, tagO) + 9;
+      const tagTop = Math.min(barTop, dotY != null ? dotY - 4 : barTop) - 15;
+      rrect(x - tagW / 2, tagTop, tagW, 10.5, 5.25, { color: C.ink });
+      spaced(tag, x - tagW / 2 + 4.5, tagTop + 7.3, { ...tagO, color: C.white });
+    }
+  });
+  if (cum.length) {
+    const last = cum[cum.length - 1];
+    const lbl = `Cumulative ${formatGpa(last.t.cumulative)}`;
+    const lo = { size: 7, bold: true };
+    const lw = width(lbl, lo) + 10;
+    // Beside the last dot when there is room to its right, otherwise just above it.
+    const dx = cx(last.i);
+    const dy = vy(last.t.cumulative);
+    const beside = dx + 10 + lw <= plotX + plotW;
+    const lx = beside ? dx + 10 : dx - lw - 14;
+    const ly = beside ? dy - 6.5 : dy - 20;
+    rrect(lx, ly, lw, 13, 3.5, { color: C.ink });
+    text(lbl, lx + 5, ly + 9.2, { ...lo, color: C.white });
+  }
+
+  // Axis: semester on the first line, the year grouped underneath.
+  const axisTop = plotTop + plotH;
+  terms.forEach((t, i) => {
+    const lab = `Sem ${ROMAN[t.semester]}`;
+    const o = { size: 7.5, bold: true };
+    text(lab, cx(i) - width(lab, o) / 2, axisTop + 13, { ...o, color: t.gpa != null ? C.ink : C.muted });
+  });
+  YEARS.forEach((yr, k) => {
+    const a = cx(k * 2) - slot / 2 + 6;
+    const b = cx(k * 2 + 1) + slot / 2 - 6;
+    line(a, axisTop + 19, b, axisTop + 19, { color: C.line, thickness: 0.6 });
+    const yl = `YEAR ${yr}`;
+    const o = { size: 6.2, bold: true, tracking: 1.1 };
+    spaced(yl, (a + b) / 2 - spacedWidth(yl, o) / 2, axisTop + 29, { ...o, color: C.muted });
+  });
+
+  // The takeaways, in words, under the chart.
+  {
+    const top = axisTop + axisH + 14;
+    rrect(M, top, CW, insightH, 10, { color: C.mist, border: C.line });
+    const first = graded[0];
+    const change = first && latest && first !== latest ? latest.gpa - first.gpa : null;
+    const termName = (t) => `Year ${t.year} · Semester ${ROMAN[t.semester]}`;
+    const cells = [
+      ["LATEST SEMESTER", latest ? formatGpa(latest.gpa) : "—", latest ? termName(latest) : "No semester graded yet"],
+      [
+        "CHANGE SINCE FIRST",
+        change == null ? "—" : `${change >= 0 ? "+" : "-"}${Math.abs(change).toFixed(2)}`,
+        change == null ? "Needs two graded semesters" : `From ${formatGpa(first.gpa)} in Y${first.year} S${ROMAN[first.semester]}`,
+      ],
+      ["BEST SEMESTER", best ? formatGpa(best.gpa) : "—", best ? termName(best) : "No semester graded yet"],
+      ["CUMULATIVE NOW", formatGpa(overall.gpa), band ? band.label : "Enter a grade to see your class"],
+    ];
+    const cw = CW / cells.length;
+    cells.forEach(([label, value, sub], i) => {
+      const x = M + i * cw + 14;
+      if (i > 0) line(M + i * cw, top + 10, M + i * cw, top + insightH - 10, { color: C.line });
+      spaced(label, x, top + 14, { size: 5.8, bold: true, color: C.muted, tracking: 1 });
+      text(value, x, top + 30, { size: 13, bold: true, color: C.ink });
+      text(fit(sub, { size: 6.5 }, cw - 24), x, top + 40, { size: 6.5, color: C.muted });
+    });
+  }
+  y += chartH + 18;
 
   // ---- semester table ----
   sectionTitle("BREAKDOWN", "Semester by semester", null, 16 + 16.5 * terms.length);

@@ -9,6 +9,7 @@ import SemesterCard from "./SemesterCard";
 import SummaryPanel from "./SummaryPanel";
 import PlannerPanel from "./PlannerPanel";
 import DegreeStep from "./DegreeStep";
+import CourseGuide from "./CourseGuide";
 import HeroStage from "./HeroStage";
 import { scrollToId } from "@/lib/motion";
 
@@ -199,6 +200,8 @@ export default function Calculator({ intro }) {
                 )}
 
                 <DegreeStep track={track} onChange={actions.setTrack} />
+
+                <CourseGuide hasGrades={Object.keys(data.grades).length > 0} />
 
                 {notCounted && (
                   <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-dashed border-line-strong bg-mist px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">

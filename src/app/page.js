@@ -1,6 +1,7 @@
-import { ArrowDown, ArrowRight, ArrowUpRight, Check, FileText, FileUp, GraduationCap, RotateCcw, ShieldCheck, Target, TrendingUp, UserRound } from "lucide-react";
-import Header from "@/components/Header";
-import Calculator from "@/components/Calculator";
+import Link from "next/link";
+import { ArrowRight, ArrowUpRight, Check, FileText, FileUp, GraduationCap, Layers, PencilLine, RotateCcw, ShieldCheck, Target, TrendingUp, UserRound } from "lucide-react";
+import Footer from "@/components/Footer";
+import HeroStage from "@/components/HeroStage";
 import ReportPreview3D from "@/components/motion/ReportPreview3D";
 import { CLASSES, GRADES } from "@/lib/gpa";
 import { FAQ } from "@/data/faq";
@@ -71,20 +72,23 @@ export default function Home() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD).replace(/</g, "\\u003c") }} />
-      <Header />
-      <main>
-        <Calculator intro={<HeroIntro />} />
+      <main id="main">
+        <HeroStage anchorId="hero-preview">
+          <HeroIntro />
+          <HeroPreview />
+        </HeroStage>
+        <HowItWorks />
         <PlannerFeature />
         <ReportFeature />
         <Grading />
         <Faq />
       </main>
-      <Footer />
+      <Footer cta />
     </>
   );
 }
 
-// Server-rendered intro for the hero stage; Calculator places the department picker under it.
+// Server-rendered intro for the hero stage; the calculator preview sits under it.
 // Words are pre-split so GSAP can raise them one by one without touching the DOM structure.
 function HeroIntro() {
   const words = [
@@ -122,22 +126,22 @@ function HeroIntro() {
       </h1>
 
       <p data-hero="3" className="mt-6 max-w-xl text-[15.5px] leading-relaxed text-pretty text-muted sm:text-[17.5px]">
-        The GPA calculator for the Faculty of Applied Sciences, Rajarata University. Pick your department, add your grades, and see
-        semester, cumulative and overall GPA with your class band.
+        The GPA calculator for the Faculty of Applied Sciences, Rajarata University. Add your grades to see semester, cumulative and
+        overall GPA, plan the grades you need for the next class, and keep everything in a PDF report.
       </p>
 
       <div data-hero="4" className="mt-9 flex flex-col items-center gap-5">
         <div className="flex flex-wrap items-center justify-center gap-3">
-          <a
-            href="#departments"
+          <Link
+            href="/calculator"
             data-magnetic
             className="group inline-flex h-12 items-center gap-2 rounded-full bg-ink pr-2 pl-6 text-[14.5px] font-semibold text-paper shadow-[0_18px_40px_-18px_rgb(160_0_0/0.7)] transition-colors hover:bg-brand hover:text-white"
           >
             Calculate my GPA
-            <span className="inline-flex size-8 items-center justify-center rounded-full bg-paper/15 transition-transform group-hover:translate-y-0.5">
-              <ArrowDown className="size-4" aria-hidden />
+            <span className="inline-flex size-8 items-center justify-center rounded-full bg-paper/15 transition-transform group-hover:translate-x-0.5">
+              <ArrowRight className="size-4" aria-hidden />
             </span>
-          </a>
+          </Link>
           <a
             href="#grading"
             className="inline-flex h-12 items-center gap-1.5 rounded-full border border-line-strong bg-surface/60 px-6 text-[14.5px] font-semibold text-ink backdrop-blur transition-colors hover:border-ink/40"
@@ -158,6 +162,141 @@ function HeroIntro() {
         </ul>
       </div>
     </div>
+  );
+}
+
+// A drawn preview of the calculator, in the site's own theme. The whole frame links to the calculator page,
+// and the hero's WebGL horizon rises behind it.
+function HeroPreview() {
+  const rows = [
+    ["ICT 2204", "Web Technologies", "2", "A"],
+    ["ICT 2301", "Design and Analysis of Algorithms", "3", "B+"],
+    ["ICT 2402", "Software Engineering", "4", "A-"],
+    ["ICT 2403", "Graphics and Image Processing", "4", "A"],
+  ];
+  const bars = [62, 70, 66, 78, 84, 80];
+  return (
+    <Link
+      id="hero-preview"
+      href="/calculator"
+      data-hero="5"
+      aria-label="Open the GPA calculator"
+      className="group relative mx-auto mt-24 block max-w-5xl rounded-[28px] border border-line bg-surface/60 p-2 shadow-[0_50px_100px_-50px_rgb(0_0_0/0.55)] backdrop-blur-xl transition-transform duration-500 hover:-translate-y-1 sm:mt-32 sm:p-2.5"
+    >
+      <div className="pointer-events-none absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-brand to-transparent" aria-hidden />
+      <div className="overflow-hidden rounded-[22px] border border-line bg-paper">
+        <div className="flex items-center gap-2 border-b border-line bg-mist px-4 py-3">
+          <span className="size-2.5 rounded-full bg-brand" />
+          <span className="size-2.5 rounded-full bg-line-strong" />
+          <span className="size-2.5 rounded-full bg-line-strong" />
+          <span className="mx-auto inline-flex items-center gap-1.5 rounded-lg bg-surface px-3 py-1 font-mono text-[11px] text-muted">
+            gpa.arict.lk<span className="text-ink">/calculator</span>
+          </span>
+          <span className="hidden w-12 sm:block" />
+        </div>
+
+        <div className="grid gap-5 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
+          <div className="min-w-0">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="text-[11.5px] font-medium text-muted">BSc Honours in Information Technology</p>
+                <p className="font-display text-xl font-bold tracking-tight text-ink">Computing</p>
+              </div>
+              <span className="inline-flex rounded-full border border-line bg-mist p-1 text-[11px] font-semibold text-muted">
+                <span className="rounded-full px-2.5 py-1">Year 1</span>
+                <span className="rounded-full bg-surface px-2.5 py-1 text-ink shadow-[0_1px_3px_rgb(0_0_0/0.12)]">Year 2</span>
+                <span className="rounded-full px-2.5 py-1">Year 3</span>
+              </span>
+            </div>
+            <div className="mt-4 overflow-hidden rounded-2xl border border-line">
+              <div className="flex items-center justify-between border-b border-line bg-mist px-4 py-3">
+                <p className="font-display text-[14px] font-bold text-ink">Semester I</p>
+                <p className="text-[12px] text-muted">
+                  Semester GPA <b className="ml-1 font-display text-[15px] text-ink">3.77</b>
+                </p>
+              </div>
+              <ul className="divide-y divide-line">
+                {rows.map(([code, title, cr, g]) => (
+                  <li key={code} className="flex items-center gap-3 px-4 py-2.5">
+                    <span className="w-16 shrink-0 font-mono text-[11.5px] font-semibold text-brand">{code}</span>
+                    <span className="min-w-0 flex-1 truncate text-[13px] text-ink">{title}</span>
+                    <span className="hidden text-[11.5px] text-muted sm:block">{cr} credits</span>
+                    <span className="inline-flex h-8 w-16 items-center justify-center rounded-lg bg-ink font-display text-[13px] font-bold text-paper">{g}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <div className="grid gap-3 self-start">
+            <div className="relative overflow-hidden rounded-2xl bg-[#0b0b0b] p-5 text-white dark:bg-surface dark:ring-1 dark:ring-white/10">
+              <div className="pointer-events-none absolute -top-16 -right-12 size-40 rounded-full bg-[#a00000]/50 blur-3xl" />
+              <p className="relative text-[10.5px] font-semibold tracking-[0.1em] text-white/55 uppercase">Overall GPA</p>
+              <p className="relative mt-1.5 font-display text-5xl leading-none font-extrabold tracking-[-0.04em]">3.80</p>
+              <div className="relative mt-4 h-1.5 rounded-full bg-white/10">
+                <div className="h-full w-[95%] rounded-full bg-[#e5484d]" />
+              </div>
+              <span className="relative mt-3 inline-flex h-6 items-center rounded-full bg-white px-2.5 text-[11px] font-bold text-[#0b0b0b]">First Class</span>
+            </div>
+            <div className="rounded-2xl border border-line bg-surface p-4">
+              <p className="text-[10.5px] font-semibold tracking-[0.1em] text-muted uppercase">By semester</p>
+              <div className="mt-3 flex h-14 items-end gap-1.5">
+                {bars.map((h, i) => (
+                  <span key={i} className="flex-1 rounded-t-[3px] bg-brand" style={{ height: `${h}%` }} />
+                ))}
+                <span className="h-1 flex-1 rounded-full bg-line" />
+                <span className="h-1 flex-1 rounded-full bg-line" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <span className="absolute right-6 -bottom-4 inline-flex h-9 items-center gap-1.5 rounded-full bg-brand px-4 text-[13px] font-semibold text-white shadow-[0_14px_30px_-14px_rgb(229_72_77/0.9)] transition-transform group-hover:translate-x-0.5">
+        Open the calculator <ArrowRight className="size-3.5" aria-hidden />
+      </span>
+    </Link>
+  );
+}
+
+// What the site does, in three steps.
+function HowItWorks() {
+  const steps = [
+    { n: "01", icon: Layers, title: "Pick your department and degree", text: "All five departments of the Faculty of Applied Sciences. Choose BSc (3 years) or BSc Honours (4 years) and every course loads with its credits." },
+    { n: "02", icon: PencilLine, title: "Enter your grades", text: "Choose a grade for each course you sat and leave the rest. Semester, cumulative and overall GPA update as you go, with your class." },
+    { n: "03", icon: Target, title: "Plan the next class", text: "See the GPA you need for each class, a grade to aim for in every remaining course, and download it all as a PDF report." },
+  ];
+  return (
+    <section id="how" className="scroll-mt-24 border-b border-line">
+      <div className="container-page py-20">
+        <div data-reveal className="max-w-2xl">
+          <p className="font-mono text-xs font-medium tracking-wide text-brand uppercase">How it works</p>
+          <h2 className="mt-3 font-display text-3xl font-bold tracking-[-0.03em] text-ink sm:text-4xl">From grades to a plan, in three steps</h2>
+        </div>
+        <ol data-reveal-stagger className="mt-10 grid gap-px overflow-hidden rounded-3xl border border-line bg-line md:grid-cols-3">
+          {steps.map((s) => (
+            <li key={s.n} className="bg-surface p-6 sm:p-7">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex size-10 items-center justify-center rounded-xl bg-brand-soft text-brand">
+                  <s.icon className="size-[18px]" aria-hidden />
+                </span>
+                <span className="font-mono text-xs font-medium text-muted">{s.n}</span>
+              </div>
+              <h3 className="mt-5 font-display text-lg font-bold tracking-tight text-ink">{s.title}</h3>
+              <p className="mt-1.5 text-[14px] leading-relaxed text-muted">{s.text}</p>
+            </li>
+          ))}
+        </ol>
+        <div data-reveal className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+          <Link
+            href="/calculator"
+            className="group inline-flex h-11 items-center gap-2 rounded-full bg-ink px-5 text-[14px] font-semibold text-paper transition-colors hover:bg-brand hover:text-white"
+          >
+            Open the calculator <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
+          </Link>
+          <p className="text-[13px] text-muted">Biological · Chemical · Computing · Health Promotion · Physical Sciences</p>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -213,14 +352,14 @@ function PlannerFeature() {
               </li>
             ))}
           </ol>
-          <a
-            href="#departments"
+          <Link
+            href="/calculator"
             data-reveal
             data-magnetic
             className="mt-8 inline-flex h-11 items-center gap-2 rounded-full bg-brand px-5 text-[14px] font-semibold text-white shadow-[0_14px_30px_-16px_rgb(229_72_77/0.8)] transition-colors hover:bg-brand-dark"
           >
             <Target className="size-4" aria-hidden /> Plan my class
-          </a>
+          </Link>
         </div>
       </div>
     </section>
@@ -332,13 +471,13 @@ function ReportFeature() {
               </li>
             ))}
           </ul>
-          <a
-            href="#departments"
+          <Link
+            href="/calculator#departments"
             data-reveal
             className="mt-8 inline-flex h-10 items-center gap-1.5 rounded-full bg-ink px-5 text-[13.5px] font-semibold text-paper transition-colors hover:bg-ink-soft"
           >
             <FileUp className="size-4" aria-hidden /> Restore from a PDF
-          </a>
+          </Link>
         </div>
         <div data-reveal className="w-full">
           <div data-parallax="0.06">
@@ -456,57 +595,5 @@ function Faq() {
         </div>
       </div>
     </section>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="relative isolate overflow-hidden border-t border-line bg-paper">
-      <div className="pointer-events-none absolute bottom-[-18rem] left-1/2 -z-10 h-[26rem] w-[56rem] -translate-x-1/2 rounded-full bg-brand/10 blur-3xl" aria-hidden />
-
-      <div className="container-page py-20 text-center sm:py-28">
-        <p data-reveal className="font-mono text-xs font-medium tracking-wide text-brand uppercase">Ready when you are</p>
-        <h2 data-reveal className="mx-auto mt-3 max-w-2xl font-display text-4xl font-bold tracking-[-0.04em] text-balance text-ink sm:text-6xl">
-          Check your GPA in <span className="font-serif font-normal tracking-[-0.02em] text-brand italic">under a minute.</span>
-        </h2>
-        <div data-reveal className="mt-9 flex justify-center">
-          <a
-            href="#departments"
-            data-magnetic
-            className="group inline-flex h-12 items-center gap-2 rounded-full bg-ink pr-2 pl-6 text-[14.5px] font-semibold text-paper transition-colors hover:bg-brand hover:text-white"
-          >
-            Start calculating
-            <span className="inline-flex size-8 items-center justify-center rounded-full bg-paper/15 transition-transform group-hover:-translate-y-0.5">
-              <ArrowUpRight className="size-4" aria-hidden />
-            </span>
-          </a>
-        </div>
-      </div>
-
-      <div className="container-page">
-        <div className="flex flex-col gap-4 border-t border-line py-8 text-[13px] text-muted sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/arict-wordmark.png" alt="ARICT" className="h-4 w-auto dark:hidden" />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/arict-wordmark-light.png" alt="ARICT" className="hidden h-4 w-auto dark:block" />
-            <span>Association of Rajarata Information &amp; Communication Technology</span>
-          </div>
-          <nav className="flex gap-5" aria-label="ARICT">
-            <a href="https://arict.lk" className="transition-colors hover:text-ink">arict.lk</a>
-            <a href="https://papers.arict.lk" className="transition-colors hover:text-ink">Past Papers</a>
-            <a href="https://arict.lk/contact" className="transition-colors hover:text-ink">Contact</a>
-          </nav>
-        </div>
-      </div>
-
-      {/* Oversized wordmark, cut off by the page edge. */}
-      <p
-        className="pointer-events-none -mb-[0.2em] bg-gradient-to-b from-ink/[0.07] to-transparent bg-clip-text text-center font-display text-[19vw] leading-none font-extrabold tracking-[-0.06em] whitespace-nowrap text-transparent select-none"
-        aria-hidden
-      >
-        ARICT
-      </p>
-    </footer>
   );
 }

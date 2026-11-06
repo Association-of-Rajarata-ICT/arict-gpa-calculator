@@ -63,7 +63,6 @@ html {
   background: var(--paper);
   color: var(--body);
   -webkit-tap-highlight-color: transparent;
-  scroll-padding-top: 6rem;
 }
 
 body {

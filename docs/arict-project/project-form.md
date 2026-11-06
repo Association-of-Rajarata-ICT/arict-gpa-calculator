@@ -61,13 +61,13 @@ Grade points, credits and class bands follow the Faculty of Applied Sciences Stu
 | Class bands | First 3.70 · Second Upper 3.30 · Second Lower 3.00 · Pass 2.00 |
 
 ### Fast and easy to use
-Works on phones and desktops, in dark and light themes, with smooth scrolling and an interactive 3D hero. A built-in FAQ and grading guide explain how your GPA is calculated.
+A home page explains what the site does, and the calculator and planner live on their own page. Works on phones and desktops, in dark and light themes, with smooth scrolling, page transitions and an interactive 3D hero. A built-in FAQ and grading guide explain how your GPA is calculated.
 
 ## Important
 
 This is an unofficial study aid made by ARICT. Your official results are on the university's Examination Information System (EIS).
 
-**Try it:** [gpa.arict.lk](https://gpa.arict.lk)
+**Try it:** [gpa.arict.lk](https://gpa.arict.lk), or go straight to the [calculator](https://gpa.arict.lk/calculator)
 ```
 
 ## Details
@@ -91,18 +91,18 @@ Association of Rajarata Information & Communication Technology (ARICT) - Organis
 | Field | Value |
 | --- | --- |
 | GitHub URL | https://github.com/Association-of-Rajarata-ICT/arict-gpa-calculator |
-| Live demo URL | https://gpa.arict.lk |
+| Live demo URL | https://gpa.arict.lk/calculator |
 | Video URL | (leave empty) |
 
 ## Images
 
 - **Cover image:** `cover-2400x1500.jpg` (16:10, the project card ratio; important content sits inside the 16:8 band the project page shows). Use the `.png` if you prefer.
 - **Screenshots**, in this order:
-  1. `screenshots/02-calculator-dark.png`: calculator with grades, degree chosen, and the overall GPA
+  1. `screenshots/02-calculator-dark.png`: the calculator page, with grades, degree chosen, and the overall GPA
   2. `screenshots/09-planner.png`: next-class planner with target grades
   3. `screenshots/10-planner-feature.png`: the planner feature on the home page
   4. `screenshots/11-degree-step.png`: choosing BSc or BSc Honours
-  5. `screenshots/01-hero-dark.png`: home page
+  5. `screenshots/01-hero-dark.png`: the home page
   6. `screenshots/03-export-dialog.png`: PDF export with name and registration number
   7. `screenshots/04-report-section.png`: PDF report and restore
   8. `screenshots/08-mobile-summary.png`: phone view

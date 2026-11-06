@@ -2,6 +2,9 @@
 
 A semester and overall GPA calculator for the five departments of the Faculty of Applied Sciences, Rajarata University of Sri Lanka. It is planned for **gpa.arict.lk**.
 
+- **Two pages.** `/` (home) explains what the site does: a hero with a calculator preview, how it works, the next-class planner, the PDF report, the grading system and the FAQ. `/calculator` is the tool itself: department picker, BSc / BSc Honours step, semesters, summary and the next-class planner. Every internal link goes through a page transition (`src/components/motion/PageTransition.js`): a two-layer curtain with the page name, skipped for reduced motion.
+- **Degree step.** After the department, the student chooses BSc (3 years) or BSc Honours (4 years); nothing is assumed until they do. A BSc counts Years 1 to 3 and marks Year 4 "Honours only". The choice is stored per department (`track`).
+- **Next-class planner.** `src/lib/planner.js` works out the average the remaining courses need for each class (GPA cut-offs only), suggests a grade for every remaining course, and lets the student change them (`goal` and `targets` are stored per department). The plan is also printed in the PDF report.
 - Choose a department and its courses load with their credits and GPA status already filled in.
 - Pick a grade for each course to see the semester, cumulative and overall GPA, plus the class band.
 - Applied Sciences students can switch subjects on and off. Anyone can move a course to the other semester, remove courses they aren't taking, or add their own.

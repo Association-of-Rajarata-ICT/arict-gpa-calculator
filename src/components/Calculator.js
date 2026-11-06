@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import dynamic from "next/dynamic";
 import { DEPARTMENTS } from "@/data/departments";
 import { buildCourses, classFor, computeGpa, computeTerms, countedCourses, formatGpa, getDepartment, latestGradedYear, trackYears, YEARS } from "@/lib/gpa";
 import { EMPTY_DEPT_DATA, EMPTY_STATE, loadState, saveProfile, saveState } from "@/lib/storage";
@@ -10,10 +9,8 @@ import SemesterCard from "./SemesterCard";
 import SummaryPanel from "./SummaryPanel";
 import PlannerPanel from "./PlannerPanel";
 import DegreeStep from "./DegreeStep";
+import HeroStage from "./HeroStage";
 import { scrollToId } from "@/lib/motion";
-
-// three.js is large; it loads after the page is interactive and never on the server.
-const HeroScene = dynamic(() => import("./motion/HeroScene"), { ssr: false });
 
 export default function Calculator({ intro }) {
   const [state, setState] = useState(EMPTY_STATE);
@@ -143,25 +140,19 @@ export default function Calculator({ intro }) {
 
   return (
     <>
-      {/* The hero follows the site theme. A WebGL horizon rises behind the picker; a CSS glow stands in without WebGL. */}
-      <section className="relative isolate overflow-hidden border-b border-line bg-paper">
-        <div className="hero-grid pointer-events-none absolute inset-0 -z-20" aria-hidden />
-        <div className="hero-fallback-glow pointer-events-none absolute inset-x-0 bottom-0 -z-20 h-[70%]" aria-hidden />
-        <HeroScene anchorId="departments" />
-        <div className="container-page pt-36 pb-16 sm:pt-44 sm:pb-24">
-          {intro}
-          <div data-hero="5" className="mt-28 sm:mt-36">
-            <DepartmentPicker
-              departments={DEPARTMENTS}
-              selected={state.dept}
-              onSelect={selectDept}
-              onRestore={actions.importState}
-              data={state.data}
-              ready={ready}
-            />
-          </div>
+      <HeroStage anchorId="departments">
+        {intro}
+        <div data-hero="5" className="mt-24 sm:mt-32">
+          <DepartmentPicker
+            departments={DEPARTMENTS}
+            selected={state.dept}
+            onSelect={selectDept}
+            onRestore={actions.importState}
+            data={state.data}
+            ready={ready}
+          />
         </div>
-      </section>
+      </HeroStage>
 
       <section id="calculator" className="container-page scroll-mt-24 pt-4 pb-24">
         {!ready ? (

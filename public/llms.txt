@@ -15,6 +15,7 @@ Students pick a department, enter a grade for each course, and see semester, cum
 Biological Sciences, Chemical Sciences, Computing (Information Technology), Health Promotion, Physical Sciences.
 
 ## Pages
-- [GPA calculator](https://gpa.arict.lk/): the whole app, with FAQ and grading reference
+- [Home](https://gpa.arict.lk/): what the calculator does, the PDF report, the grading system and the FAQ
+- [GPA calculator and planner](https://gpa.arict.lk/calculator): pick a department and degree, enter grades, see every GPA and plan the next class
 - [ARICT](https://arict.lk): the student association
 - [Past papers](https://papers.arict.lk): past examination papers for the same faculty

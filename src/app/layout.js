@@ -1,8 +1,11 @@
 import { Instrument_Serif, Inter, JetBrains_Mono, Manrope } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { DESCRIPTION, KEYWORDS, ORG, SHARE_DESCRIPTION, SHARE_TITLE, SITE_NAME, SITE_URL, TITLE } from "@/lib/site";
+import BackToTop from "@/components/BackToTop";
+import Header from "@/components/Header";
 import SmoothScroll from "@/components/motion/SmoothScroll";
 import PageMotion from "@/components/motion/PageMotion";
+import PageTransition from "@/components/motion/PageTransition";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -44,9 +47,12 @@ export default function RootLayout({ children }) {
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-svh antialiased" suppressHydrationWarning>
+        <Header />
         {children}
         <SmoothScroll />
         <PageMotion />
+        <BackToTop />
+        <PageTransition />
         <Analytics />
       </body>
     </html>

@@ -7,6 +7,7 @@ import {
   CLASSES,
   computeGpa,
   computeTerms,
+  countedCourses,
   displayCode,
   formatGpa,
   getDepartment,
@@ -14,6 +15,7 @@ import {
   GRADES,
   nextClass,
   ROMAN,
+  trackYears,
   YEARS,
 } from "@/lib/gpa";
 import { DEPARTMENTS } from "@/data/departments";
@@ -53,9 +55,11 @@ export async function createReport(state, { name = "", regNo = "" } = {}) {
   if (!dept) throw new Error("Choose a department first.");
   const data = state.data[dept.id] || EMPTY_DEPT_DATA;
   const hidden = new Set(data.hidden);
-  const active = buildCourses(dept, data).filter((c) => !hidden.has(c.id));
+  const allActive = buildCourses(dept, data).filter((c) => !hidden.has(c.id));
+  // A BSc counts Years 1-3 only; Honours, or no choice yet, counts all four.
+  const active = countedCourses(allActive, data.track);
   const grades = data.grades;
-  const terms = computeTerms(active, grades);
+  const terms = computeTerms(active, grades, trackYears(data.track));
   const overall = computeGpa(active, grades);
   const band = classFor(overall.gpa);
   const next = nextClass(overall.gpa);
@@ -212,7 +216,10 @@ export async function createReport(state, { name = "", regNo = "" } = {}) {
   textRight("gpa.arict.lk", W - M, 59, { size: 9, bold: true, color: C.bright });
 
   text("Academic GPA Report", M, 104, { size: 29, bold: true, color: C.white });
-  text(`${dept.name}  ·  ${dept.programme}`, M, 124, { size: 10.5, color: C.white, opacity: 0.68 });
+  // The programme line names the chosen degree when there is one.
+  const programme =
+    data.track === "bsc" ? dept.programme.replace("BSc / BSc Honours", "BSc") : data.track === "hons" ? dept.programme.replace("BSc / BSc Honours", "BSc Honours") : dept.programme;
+  text(`${dept.name}  ·  ${programme}`, M, 124, { size: 10.5, color: C.white, opacity: 0.68 });
 
   line(M, 140, W - M, 140, { color: C.white, opacity: 0.14 });
   const meta = [
@@ -267,7 +274,7 @@ export async function createReport(state, { name = "", regNo = "" } = {}) {
     ["GPA CREDITS", String(overall.credits), "Counted in your GPA"],
     ["COURSES GRADED", String(overall.graded), nonGpaGraded ? `Includes ${nonGpaGraded} non-GPA` : `Of ${active.length} listed`],
     ["BEST SEMESTER", best ? formatGpa(best.gpa) : "—", best ? `Year ${best.year} · Semester ${ROMAN[best.semester]}` : "No semester graded yet"],
-    ["SEMESTERS", `${graded.length} / 8`, "With at least one grade"],
+    ["SEMESTERS", `${graded.length} / ${terms.length}`, data.track === "bsc" ? "Of a 3-year BSc" : "With at least one grade"],
   ];
   const tx = M + cardW + 12;
   const tw = (CW - cardW - 12 - 10) / 2;
@@ -431,7 +438,7 @@ export async function createReport(state, { name = "", regNo = "" } = {}) {
     const o = { size: 7.5, bold: true };
     text(lab, cx(i) - width(lab, o) / 2, axisTop + 13, { ...o, color: t.gpa != null ? C.ink : C.muted });
   });
-  YEARS.forEach((yr, k) => {
+  [...new Set(terms.map((t) => t.year))].forEach((yr, k) => {
     const a = cx(k * 2) - slot / 2 + 6;
     const b = cx(k * 2 + 1) + slot / 2 - 6;
     line(a, axisTop + 19, b, axisTop + 19, { color: C.line, thickness: 0.6 });
@@ -501,8 +508,8 @@ export async function createReport(state, { name = "", regNo = "" } = {}) {
   y += 26;
 
   // ---- next-class plan ----
-  const plan = buildPlan({ courses: active, grades, track: data.track, targets: data.targets, goalLabel: data.goal });
-  if (plan.goal) {
+  const plan = buildPlan({ courses: allActive, grades, track: data.track || "hons", targets: data.targets, goalLabel: data.goal });
+  if (plan.goal && (data.track === "bsc" || data.track === "hons")) {
     const PLAN_SHORT = { "First Class": "First Class", "Second Class (Upper)": "Second Upper", "Second Class (Lower)": "Second Lower", Pass: "Pass" };
     sectionTitle(
       "PLAN",
@@ -747,7 +754,7 @@ export async function createReport(state, { name = "", regNo = "" } = {}) {
     const list = others
       .map((d) => {
         const dd = state.data[d.id];
-        const g = computeGpa(buildCourses(d, dd).filter((c) => !new Set(dd.hidden).has(c.id)), dd.grades).gpa;
+        const g = computeGpa(countedCourses(buildCourses(d, dd).filter((c) => !new Set(dd.hidden).has(c.id)), dd.track), dd.grades).gpa;
         return `${d.name}${g != null ? ` (GPA ${formatGpa(g)})` : ""}`;
       })
       .join(", ");

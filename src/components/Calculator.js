@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { DEPARTMENTS } from "@/data/departments";
-import { buildCourses, classFor, computeGpa, computeTerms, formatGpa, getDepartment, latestGradedYear, YEARS } from "@/lib/gpa";
+import { buildCourses, classFor, computeGpa, computeTerms, countedCourses, formatGpa, getDepartment, latestGradedYear, trackYears, YEARS } from "@/lib/gpa";
 import { EMPTY_DEPT_DATA, EMPTY_STATE, loadState, saveProfile, saveState } from "@/lib/storage";
 import DepartmentPicker from "./DepartmentPicker";
 import SemesterCard from "./SemesterCard";
 import SummaryPanel from "./SummaryPanel";
 import PlannerPanel from "./PlannerPanel";
+import DegreeStep from "./DegreeStep";
 import { scrollToId } from "@/lib/motion";
 
 // three.js is large; it loads after the page is interactive and never on the server.
@@ -38,9 +39,13 @@ export default function Calculator({ intro }) {
   const hidden = useMemo(() => new Set(data.hidden), [data.hidden]);
   const active = useMemo(() => courses.filter((c) => !hidden.has(c.id)), [courses, hidden]);
 
-  const terms = useMemo(() => computeTerms(active, data.grades), [active, data.grades]);
+  // A BSc counts Years 1-3; Honours (or no choice yet) counts all four. Year 4 stays editable either way.
+  const track = data.track;
+  const counted = useMemo(() => countedCourses(active, track), [active, track]);
+  const terms = useMemo(() => computeTerms(counted, data.grades, trackYears(track)), [counted, data.grades, track]);
+  const allTerms = useMemo(() => computeTerms(active, data.grades), [active, data.grades]);
 
-  const overall = useMemo(() => computeGpa(active, data.grades), [active, data.grades]);
+  const overall = useMemo(() => computeGpa(counted, data.grades), [counted, data.grades]);
 
   function selectDept(id) {
     setState((s) => ({ ...s, dept: id }));
@@ -132,7 +137,8 @@ export default function Calculator({ intro }) {
   };
 
   const enabledSubjects = data.subjects ?? dept?.subjects.map((s) => s.prefix) ?? [];
-  const yearTerms = terms.filter((t) => t.year === year);
+  const yearTerms = allTerms.filter((t) => t.year === year);
+  const notCounted = year > trackYears(track);
   const existingCodes = new Map(courses.map((c) => [c.code, c]));
 
   return (
@@ -173,7 +179,7 @@ export default function Calculator({ intro }) {
                       {dept.name}
                     </h2>
                   </div>
-                  <YearTabs year={year} onChange={setYear} terms={terms} />
+                  <YearTabs year={year} onChange={setYear} terms={allTerms} track={track} />
                 </div>
 
                 {dept.subjects.length > 1 && (
@@ -201,7 +207,25 @@ export default function Calculator({ intro }) {
                   </div>
                 )}
 
-                <div key={`${dept.id}-${year}`} className="rise-children mt-6 grid gap-6">
+                <DegreeStep track={track} onChange={actions.setTrack} />
+
+                {notCounted && (
+                  <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-dashed border-line-strong bg-mist px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-[13.5px] text-body">
+                      <b className="text-ink">Year 4 is for BSc Honours.</b> You can still enter these grades, but they are not counted in your BSc
+                      GPA.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => actions.setTrack("hons")}
+                      className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-line-strong bg-surface px-4 text-[13px] font-semibold text-ink hover:border-ink/40"
+                    >
+                      Switch to BSc Honours
+                    </button>
+                  </div>
+                )}
+
+                <div key={`${dept.id}-${year}`} className={`rise-children mt-6 grid gap-6 ${notCounted ? "opacity-60" : ""}`}>
                   {yearTerms.map((t) => (
                     <SemesterCard
                       key={`${dept.id}-${t.year}-${t.semester}`}
@@ -250,12 +274,13 @@ export default function Calculator({ intro }) {
   );
 }
 
-function YearTabs({ year, onChange, terms }) {
+function YearTabs({ year, onChange, terms, track }) {
   return (
     <div role="tablist" aria-label="Academic year" className="inline-flex self-start rounded-full border border-line bg-mist p-1 sm:self-auto">
       {YEARS.map((y) => {
         const graded = terms.some((t) => t.year === y && t.graded > 0);
         const selected = y === year;
+        const honsOnly = y > trackYears(track);
         return (
           <button
             key={y}
@@ -263,11 +288,13 @@ function YearTabs({ year, onChange, terms }) {
             type="button"
             aria-selected={selected}
             onClick={() => onChange(y)}
+            title={honsOnly ? "BSc Honours only: not counted in a BSc GPA" : undefined}
             className={`relative inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-[13.5px] font-semibold transition-all ${
               selected ? "bg-surface text-ink shadow-[0_1px_3px_rgb(0_0_0/0.12)]" : "text-muted hover:text-ink"
-            }`}
+            } ${honsOnly ? "opacity-55" : ""}`}
           >
             Year {y}
+            {honsOnly && <span className="rounded-full bg-ink/[0.07] px-1.5 py-px text-[10px] font-bold tracking-wide text-muted uppercase dark:bg-white/10">Hons</span>}
             {graded && <span className={`size-1.5 rounded-full ${selected ? "bg-brand" : "bg-muted/60"}`} aria-label="has grades" />}
           </button>
         );

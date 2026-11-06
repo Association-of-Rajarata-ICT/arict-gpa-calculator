@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowRight, ArrowUpRight, Check, FileText, FileUp, RotateCcw, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUpRight, Check, FileText, FileUp, GraduationCap, RotateCcw, ShieldCheck, Target, TrendingUp, UserRound } from "lucide-react";
 import Header from "@/components/Header";
 import Calculator from "@/components/Calculator";
 import ReportPreview3D from "@/components/motion/ReportPreview3D";
@@ -30,6 +30,8 @@ const JSON_LD = {
         "All five Faculty of Applied Sciences departments",
         "PDF report with optional name and registration number",
         "Restore grades from an exported PDF",
+        "Next-class planner: the GPA needed for First Class, Second Upper, Second Lower and Pass, with a target grade for every remaining course",
+        "BSc (3 years) and BSc Honours (4 years)",
         "Grades stay in the browser, no sign-in",
       ],
       audience: { "@type": "EducationalAudience", educationalRole: "student" },
@@ -72,6 +74,7 @@ export default function Home() {
       <Header />
       <main>
         <Calculator intro={<HeroIntro />} />
+        <PlannerFeature />
         <ReportFeature />
         <Grading />
         <Faq />
@@ -94,12 +97,12 @@ function HeroIntro() {
   return (
     <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
       <a
-        href="#report"
+        href="#class-planner"
         data-hero="1"
         className="group inline-flex items-center gap-2 rounded-full border border-line bg-surface/70 py-1 pr-3 pl-1 text-[12.5px] font-medium text-body shadow-[0_8px_24px_-16px_rgb(0_0_0/0.3)] backdrop-blur transition-colors hover:border-brand/50"
       >
         <span className="rounded-full bg-brand px-2 py-0.5 text-[11px] font-bold tracking-wide text-white">NEW</span>
-        PDF reports that restore your grades
+        Plan your path to the next class
         <ArrowRight className="size-3.5 text-muted transition-transform group-hover:translate-x-0.5 group-hover:text-brand" aria-hidden />
       </a>
 
@@ -153,6 +156,134 @@ function HeroIntro() {
             <Check className="size-4 text-good" aria-hidden /> All five departments
           </li>
         </ul>
+      </div>
+    </div>
+  );
+}
+
+function PlannerFeature() {
+  const steps = [
+    {
+      icon: GraduationCap,
+      title: "Choose BSc or BSc Honours",
+      text: "Three years or four. It decides which years count toward your GPA, and Year 4 is marked Honours only for a BSc.",
+    },
+    {
+      icon: Target,
+      title: "See what each class needs",
+      text: "For First Class, Second Upper, Second Lower and Pass: the average your remaining courses need, or whether it's already secured or out of reach.",
+    },
+    {
+      icon: TrendingUp,
+      title: "A grade to aim for in every course",
+      text: "The planner suggests a grade for each remaining course, a step higher where the credits are biggest. Change any of them and watch your projected final GPA move.",
+    },
+  ];
+  return (
+    <section id="class-planner" className="relative isolate scroll-mt-24 overflow-hidden border-t border-line">
+      <div className="pointer-events-none absolute top-1/2 -right-40 -z-10 h-[34rem] w-[34rem] -translate-y-1/2 rounded-full bg-brand/10 blur-3xl" aria-hidden />
+      <div className="container-page grid gap-14 py-20 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1fr)] lg:items-center lg:gap-16">
+        <PlannerPreview />
+        <div className="lg:order-first">
+          <p data-reveal className="inline-flex items-center gap-2 font-mono text-xs font-medium tracking-wide text-brand uppercase">
+            <span className="rounded-full bg-brand px-2 py-0.5 font-sans text-[10.5px] font-bold tracking-wide text-white">NEW</span>
+            Next-class planner
+          </p>
+          <h2 data-reveal className="mt-3 max-w-lg font-display text-3xl font-bold tracking-[-0.03em] text-balance text-ink sm:text-4xl">
+            Know exactly what it takes to reach the{" "}
+            <span className="font-serif font-normal tracking-[-0.02em] text-brand italic">next class.</span>
+          </h2>
+          <p data-reveal className="mt-3 max-w-lg text-[15px] leading-relaxed text-muted">
+            On a Pass and aiming for Second Lower? On Second Lower and want Second Upper? Enter the grades you have, and the planner works
+            out the GPA you need from here, for every department in the faculty.
+          </p>
+          <ol data-reveal-stagger className="mt-8 grid gap-5">
+            {steps.map((s, i) => (
+              <li key={s.title} className="flex gap-4">
+                <span className="relative inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">
+                  <s.icon className="size-[18px]" aria-hidden />
+                  <span className="absolute -top-1.5 -right-1.5 inline-flex size-4.5 items-center justify-center rounded-full bg-ink font-mono text-[9.5px] font-bold text-paper">
+                    {i + 1}
+                  </span>
+                </span>
+                <div>
+                  <h3 className="font-display text-[15.5px] font-bold text-ink">{s.title}</h3>
+                  <p className="mt-0.5 text-[14px] leading-relaxed text-muted">{s.text}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <a
+            href="#departments"
+            data-reveal
+            data-magnetic
+            className="mt-8 inline-flex h-11 items-center gap-2 rounded-full bg-brand px-5 text-[14px] font-semibold text-white shadow-[0_14px_30px_-16px_rgb(229_72_77/0.8)] transition-colors hover:bg-brand-dark"
+          >
+            <Target className="size-4" aria-hidden /> Plan my class
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// A drawn miniature of the planner, in the site's own theme.
+function PlannerPreview() {
+  const ladder = [
+    { name: "First Class", from: "3.70", need: "Out of reach", sub: "Highest possible 3.53", tone: "off" },
+    { name: "Second Upper", from: "3.30", need: "Average 3.39", sub: "About B+ to A-", tone: "goal" },
+    { name: "Second Lower", from: "3.00", need: "Average 2.62", sub: "You are here", tone: "here" },
+    { name: "Pass", from: "2.00", need: "Secured", sub: "C or better keeps it", tone: "ok" },
+  ];
+  const rows = [
+    ["ICT 3209", "Principles of Accounting", "2 cr", "B+"],
+    ["ICT 3301", "Human Computer Interaction", "3 cr", "A-"],
+    ["ICT 3411", "Group Project", "4 cr", "A-"],
+    ["IDC 3201", "Entrepreneurship Development", "2 cr", "B+"],
+  ];
+  return (
+    <div data-reveal className="relative mx-auto w-full max-w-[34rem]" aria-hidden>
+      <div className="absolute inset-8 -z-10 rounded-[2rem] bg-brand/20 blur-3xl" />
+      <div className="overflow-hidden rounded-[24px] border border-line bg-surface shadow-[0_40px_80px_-40px_rgb(0_0_0/0.55)]">
+        <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
+          <div>
+            <p className="font-mono text-[10px] font-medium tracking-wide text-brand uppercase">Next-class planner</p>
+            <p className="mt-0.5 font-display text-[17px] font-bold tracking-tight text-ink">Your path to Second Upper</p>
+          </div>
+          <span className="rounded-xl border border-line bg-mist px-2.5 py-1.5 text-[11px] font-bold text-ink">BSc Honours · 4y</span>
+        </div>
+        <div className="grid grid-cols-2 gap-px bg-line sm:grid-cols-4">
+          {ladder.map((l) => (
+            <div key={l.name} className={`p-3.5 ${l.tone === "goal" ? "bg-ink text-paper" : "bg-surface"} ${l.tone === "off" ? "opacity-55" : ""}`}>
+              <p className={`font-mono text-[9.5px] ${l.tone === "goal" ? "text-paper/60" : "text-muted"}`}>from {l.from}</p>
+              <p className="mt-1 font-display text-[13px] leading-tight font-bold">{l.name}</p>
+              <p className={`mt-1 text-[11.5px] font-semibold ${l.tone === "ok" ? "text-good" : ""}`}>{l.need}</p>
+              <p className={`text-[10.5px] ${l.tone === "goal" ? "text-paper/60" : l.tone === "here" ? "font-semibold text-brand" : "text-muted"}`}>{l.sub}</p>
+            </div>
+          ))}
+        </div>
+        <div className="grid gap-4 p-4 sm:grid-cols-[9.5rem_1fr]">
+          <div className="rounded-2xl bg-ink p-3.5 text-paper">
+            <p className="text-[9.5px] font-semibold tracking-[0.1em] text-paper/55 uppercase">With these grades</p>
+            <p className="mt-1 font-display text-[30px] leading-none font-extrabold tracking-tight">3.31</p>
+            <p className="mt-1 text-[10.5px] text-paper/65">Second Class (Upper)</p>
+            <div className="relative mt-2.5 h-1.5 rounded-full bg-paper/15">
+              <div className="h-full w-[83%] rounded-full bg-[#e5484d]" />
+              <span className="absolute -top-1 left-[82.5%] h-3.5 w-0.5 rounded-full bg-paper" />
+            </div>
+            <p className="mt-2.5 text-[10.5px] font-semibold text-paper/85">On track</p>
+          </div>
+          <ul className="divide-y divide-line rounded-2xl border border-line">
+            {rows.map(([code, title, cr, g]) => (
+              <li key={code} className="flex items-center gap-2.5 px-3 py-2">
+                <span className="w-14 shrink-0 font-mono text-[10.5px] font-semibold text-brand">{code}</span>
+                <span className="min-w-0 flex-1 truncate text-[11.5px] text-ink">{title}</span>
+                <span className="text-[10.5px] text-muted">{cr}</span>
+                <span className="rounded-lg border border-dashed border-line-strong px-2 py-0.5 font-display text-[11.5px] font-bold text-ink">{g}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );

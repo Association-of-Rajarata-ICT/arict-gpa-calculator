@@ -146,6 +146,14 @@ body {
   z-index: 1;
 }
 
+/* Native dropdown lists don't inherit the page colours everywhere (Chrome on Windows paints them
+   white), so the options carry the theme's surface and ink explicitly. */
+select option,
+select optgroup {
+  background-color: var(--surface);
+  color: var(--ink);
+}
+
 /* Native select with a custom chevron, so the grade picker stays accessible on every device. */
 .grade-select {
   appearance: none;

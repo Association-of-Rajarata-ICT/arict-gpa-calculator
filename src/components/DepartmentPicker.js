@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ArrowDown, Atom, Check, FileUp, FlaskConical, HeartPulse, Laptop, Leaf } from "lucide-react";
-import { buildCourses, computeGpa, formatGpa } from "@/lib/gpa";
+import { buildCourses, computeGpa, countedCourses, formatGpa } from "@/lib/gpa";
 import { EMPTY_DEPT_DATA } from "@/lib/storage";
 import RestoreButton from "./RestoreButton";
 
@@ -60,7 +60,7 @@ export default function DepartmentPicker({ departments, selected, onSelect, onRe
           {departments.map((d, i) => {
             const Icon = ICONS[d.id];
             const isOn = d.id === selected;
-            const saved = ready && data[d.id] ? computeGpa(buildCourses(d, data[d.id] || EMPTY_DEPT_DATA), data[d.id].grades) : null;
+            const saved = ready && data[d.id] ? computeGpa(countedCourses(buildCourses(d, data[d.id] || EMPTY_DEPT_DATA), data[d.id].track), data[d.id].grades) : null;
             return (
               <button
                 key={d.id}

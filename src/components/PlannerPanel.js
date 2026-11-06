@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { Check, Flag, Lock, RotateCcw, Target, TrendingUp, X } from "lucide-react";
+import { ArrowUp, Check, Flag, GraduationCap, Lock, RotateCcw, Target, TrendingUp, X } from "lucide-react";
 import { displayCode, formatGpa, GRADE_POINTS, GRADES, ROMAN } from "@/lib/gpa";
-import { buildPlan, TRACKS } from "@/lib/planner";
+import { buildPlan } from "@/lib/planner";
 
 const SHORT = { "First Class": "First Class", "Second Class (Upper)": "Second Upper", "Second Class (Lower)": "Second Lower", Pass: "Pass" };
 // Grades a student can plan for. A+ counts the same as A, so it is left out to keep the list short.
@@ -29,6 +29,8 @@ export default function PlannerPanel({ courses, data, actions }) {
     return [...map.values()].sort((a, b) => a.year - b.year || a.semester - b.semester);
   }, [remaining]);
 
+  if (data.track !== "bsc" && data.track !== "hons") return <ChooseDegreeFirst />;
+
   return (
     <section id="planner" aria-labelledby="planner-title" className="mt-14 scroll-mt-24 overflow-hidden rounded-[28px] border border-line bg-surface">
       {/* Header */}
@@ -47,23 +49,17 @@ export default function PlannerPanel({ courses, data, actions }) {
               : `No grades yet. Here's what each class needs across the ${plan.remCredits} GPA credits of your ${track.long}.`}
           </p>
         </div>
-        <div role="radiogroup" aria-label="Degree" className="inline-flex shrink-0 self-start rounded-full border border-line bg-mist p-1 sm:self-auto">
-          {Object.values(TRACKS).map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              role="radio"
-              aria-checked={track.id === t.id}
-              onClick={() => actions.setTrack(t.id)}
-              className={`h-9 rounded-full px-4 text-[13px] font-semibold transition-all ${
-                track.id === t.id ? "bg-surface text-ink shadow-[0_1px_3px_rgb(0_0_0/0.12)]" : "text-muted hover:text-ink"
-              }`}
-            >
-              {t.label}
-              <span className="ml-1.5 font-mono text-[11px] font-medium opacity-60">{t.years}y</span>
-            </button>
-          ))}
-        </div>
+        <a
+          href="#degree"
+          className="group inline-flex shrink-0 items-center gap-2.5 self-start rounded-2xl border border-line bg-mist py-2 pr-3 pl-3.5 transition-colors hover:border-ink/30 sm:self-auto"
+        >
+          <GraduationCap className="size-5 text-brand" aria-hidden />
+          <span>
+            <span className="block text-[11px] font-semibold tracking-[0.08em] text-muted uppercase">Degree</span>
+            <span className="block font-display text-[14px] leading-tight font-bold text-ink">{track.long}</span>
+          </span>
+          <span className="ml-1 text-[12.5px] font-semibold text-muted group-hover:text-ink">Change</span>
+        </a>
       </div>
 
       {/* Class ladder: what each class needs. Pick one as the goal. */}
@@ -277,4 +273,33 @@ function summary(courses, planned) {
     .sort((a, b) => GRADE_POINTS[b[0]] - GRADE_POINTS[a[0]])
     .map(([g, n]) => `${g} ×${n}`)
     .join(" · ");
+}
+
+// Until the degree is chosen the planner has nothing to plan over, so it sends the student back to step 2.
+function ChooseDegreeFirst() {
+  return (
+    <section id="planner" aria-labelledby="planner-title" className="mt-14 scroll-mt-24 overflow-hidden rounded-[28px] border border-line bg-surface">
+      <div className="relative isolate flex flex-col items-start gap-4 px-5 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+        <div className="pointer-events-none absolute -top-24 -left-16 -z-10 size-72 rounded-full bg-brand/10 blur-3xl" aria-hidden />
+        <div>
+          <p className="inline-flex items-center gap-1.5 font-mono text-xs font-medium tracking-wide text-brand uppercase">
+            <Target className="size-3.5" aria-hidden /> Next-class planner
+          </p>
+          <h2 id="planner-title" className="mt-2 font-display text-2xl font-bold tracking-[-0.03em] text-ink sm:text-3xl">
+            Choose BSc or BSc Honours to plan your class
+          </h2>
+          <p className="mt-1.5 max-w-xl text-[14px] leading-relaxed text-muted">
+            The planner shows the GPA you need for each class and a grade to aim for in every remaining course. It needs to know whether
+            your degree is three years or four.
+          </p>
+        </div>
+        <a
+          href="#degree"
+          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-brand px-5 text-[14px] font-semibold text-white shadow-[0_14px_30px_-16px_rgb(229_72_77/0.8)] transition-colors hover:bg-brand-dark"
+        >
+          <ArrowUp className="size-4" aria-hidden /> Choose your degree
+        </a>
+      </div>
+    </section>
+  );
 }

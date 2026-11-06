@@ -7,11 +7,12 @@ import { reducedMotion, ScrollTrigger } from "@/lib/motion";
 
 const NAV = [
   { href: "#departments", id: "departments", label: "Calculator" },
+  { href: "#class-planner", id: "class-planner", label: "Planner" },
   { href: "#report", id: "report", label: "PDF report" },
   { href: "#grading", id: "grading", label: "Grading" },
   { href: "#faq", id: "faq", label: "FAQ" },
 ];
-const SECTIONS = ["departments", "calculator", "report", "grading", "faq"];
+const SECTIONS = ["departments", "calculator", "class-planner", "report", "grading", "faq"];
 
 const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 

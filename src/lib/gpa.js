@@ -154,9 +154,9 @@ export function nextClass(gpa) {
 }
 
 /** Semester and cumulative GPA for every term, in order (Y1 S1 … Y4 S2). */
-export function computeTerms(active, grades) {
+export function computeTerms(active, grades, maxYear = 4) {
   const list = [];
-  for (const y of YEARS) {
+  for (const y of YEARS.filter((yr) => yr <= maxYear)) {
     for (const s of SEMESTERS) {
       const inTerm = active.filter((c) => c.year === y && c.semester === s);
       const upTo = active.filter((c) => c.year < y || (c.year === y && c.semester <= s));
@@ -172,4 +172,15 @@ export function latestGradedYear(deptData) {
     .map((code) => Number(code.match(/\d/)?.[0] || 1))
     .filter((y) => y >= 1 && y <= 4);
   return years.length ? Math.max(...years) : 1;
+}
+
+/** Years a degree track counts: a BSc is three years, BSc Honours four. No choice yet counts all four. */
+export function trackYears(track) {
+  return track === "bsc" ? 3 : 4;
+}
+
+/** The courses that count toward the GPA for the chosen track (a BSc leaves out Year 4). */
+export function countedCourses(courses, track) {
+  const max = trackYears(track);
+  return max >= 4 ? courses : courses.filter((c) => c.year <= max);
 }

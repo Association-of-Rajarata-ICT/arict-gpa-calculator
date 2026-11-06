@@ -2,7 +2,7 @@
 
 > Free, unofficial GPA calculator for the Faculty of Applied Sciences, Rajarata University of Sri Lanka (RUSL). Made by ARICT, the Association of Rajarata Information & Communication Technology. Site: https://gpa.arict.lk
 
-Students pick a department, enter a grade for each course, and see semester, cumulative and overall GPA with the class band. Grades stay in the browser (no sign-in, no server). A PDF report can be downloaded and later uploaded to restore every grade.
+Students pick a department, enter a grade for each course, and see semester, cumulative and overall GPA with the class band. Grades stay in the browser (no sign-in, no server). A PDF report can be downloaded and later uploaded to restore every grade. A next-class planner shows the average GPA the remaining courses need for First Class, Second Upper, Second Lower and Pass, for a BSc (3 years) or BSc Honours (4 years), and suggests a target grade for every remaining course.
 
 ## How GPA is calculated (FAS Student Handbook 2022/23)
 - GPA = sum(grade point x credits) / sum(credits), truncated to two decimals, not rounded.

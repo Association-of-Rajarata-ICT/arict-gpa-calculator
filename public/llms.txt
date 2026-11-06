@@ -1,0 +1,20 @@
+# ARICT GPA Calculator
+
+> Free, unofficial GPA calculator for the Faculty of Applied Sciences, Rajarata University of Sri Lanka (RUSL). Made by ARICT, the Association of Rajarata Information & Communication Technology. Site: https://gpa.arict.lk
+
+Students pick a department, enter a grade for each course, and see semester, cumulative and overall GPA with the class band. Grades stay in the browser (no sign-in, no server). A PDF report can be downloaded and later uploaded to restore every grade.
+
+## How GPA is calculated (FAS Student Handbook 2022/23)
+- GPA = sum(grade point x credits) / sum(credits), truncated to two decimals, not rounded.
+- Grade points: A+ 4.0, A 4.0, A- 3.7, B+ 3.3, B 3.0, B- 2.7, C+ 2.3, C 2.0, C- 1.7, D+ 1.3, D 1.0, E 0.0.
+- Credits are the second digit of the course code: ICT 1407 = 4 credits.
+- Non-GPA courses with zero credits: FDN courses and IDC 1202 Career Development.
+- Class bands by minimum GPA: First Class 3.70, Second Class (Upper) 3.30, Second Class (Lower) 3.00, Pass 2.00. Classes also need minimum grades and credits; final GPA uses the best 90 credits (BSc) or 120 credits (BSc Honours).
+
+## Departments covered
+Biological Sciences, Chemical Sciences, Computing (Information Technology), Health Promotion, Physical Sciences.
+
+## Pages
+- [GPA calculator](https://gpa.arict.lk/): the whole app, with FAQ and grading reference
+- [ARICT](https://arict.lk): the student association
+- [Past papers](https://papers.arict.lk): past examination papers for the same faculty

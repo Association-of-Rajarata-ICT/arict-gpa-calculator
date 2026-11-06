@@ -2,17 +2,78 @@ import { ArrowUpRight, Check, FileText, FileUp, RotateCcw, ShieldCheck, UserRoun
 import Header from "@/components/Header";
 import Calculator from "@/components/Calculator";
 import { CLASSES, GRADES } from "@/lib/gpa";
+import { FAQ } from "@/data/faq";
+import { DESCRIPTION, ORG, SITE_NAME, SITE_URL } from "@/lib/site";
 
 const HANDBOOK_URL = "https://aps.rjt.ac.lk/student-handbook-and-prospectus/";
+
+// Structured data for search engines and AI answer engines. Kept in step with the visible page.
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "@id": `${SITE_URL}/#app`,
+      name: SITE_NAME,
+      url: SITE_URL,
+      description: DESCRIPTION,
+      applicationCategory: "EducationalApplication",
+      operatingSystem: "Any (web browser)",
+      browserRequirements: "Requires JavaScript",
+      inLanguage: "en-LK",
+      isAccessibleForFree: true,
+      offers: { "@type": "Offer", price: "0", priceCurrency: "LKR" },
+      featureList: [
+        "Semester, cumulative and overall GPA",
+        "Class band (First, Second Upper, Second Lower, Pass)",
+        "All five Faculty of Applied Sciences departments",
+        "PDF report with optional name and registration number",
+        "Restore grades from an exported PDF",
+        "Grades stay in the browser, no sign-in",
+      ],
+      audience: { "@type": "EducationalAudience", educationalRole: "student" },
+      areaServed: { "@type": "Country", name: "Sri Lanka" },
+      publisher: { "@id": `${SITE_URL}/#org` },
+    },
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#org`,
+      name: ORG.name,
+      alternateName: ORG.longName,
+      url: ORG.url,
+      logo: ORG.logo,
+      parentOrganization: {
+        "@type": "CollegeOrUniversity",
+        name: "Rajarata University of Sri Lanka",
+        address: { "@type": "PostalAddress", addressLocality: "Mihintale", addressRegion: "North Central Province", addressCountry: "LK" },
+      },
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#site`,
+      url: SITE_URL,
+      name: SITE_NAME,
+      inLanguage: "en-LK",
+      publisher: { "@id": `${SITE_URL}/#org` },
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${SITE_URL}/#faq`,
+      mainEntity: FAQ.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+    },
+  ],
+};
 
 export default function Home() {
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD).replace(/</g, "\\u003c") }} />
       <Header />
       <main>
         <Calculator intro={<HeroIntro />} />
         <ReportFeature />
         <Grading />
+        <Faq />
       </main>
       <Footer />
     </>
@@ -272,6 +333,35 @@ function Grading() {
             Student handbooks <ArrowUpRight className="size-3.5" aria-hidden />
           </a>
         </p>
+      </div>
+    </section>
+  );
+}
+
+function Faq() {
+  return (
+    <section id="faq" className="scroll-mt-24 border-t border-line">
+      <div className="container-page grid gap-10 py-20 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">
+        <div>
+          <p className="font-mono text-xs font-medium tracking-wide text-brand uppercase">FAQ</p>
+          <h2 className="mt-3 font-display text-3xl font-bold tracking-[-0.03em] text-balance text-ink sm:text-4xl">
+            Questions about GPA at RUSL
+          </h2>
+          <p className="mt-3 max-w-sm text-[15px] leading-relaxed text-muted">
+            Quick answers on how the Faculty of Applied Sciences calculates GPA, and how this tool works.
+          </p>
+        </div>
+        <div className="divide-y divide-line border-y border-line">
+          {FAQ.map((f) => (
+            <details key={f.q} className="group py-5">
+              <summary className="flex cursor-pointer list-none items-start justify-between gap-6 font-display text-[16px] font-bold text-ink [&::-webkit-details-marker]:hidden">
+                {f.q}
+                <span className="mt-1 text-brand transition-transform group-open:rotate-45" aria-hidden>+</span>
+              </summary>
+              <p className="mt-3 max-w-2xl text-[14.5px] leading-relaxed text-muted">{f.a}</p>
+            </details>
+          ))}
+        </div>
       </div>
     </section>
   );

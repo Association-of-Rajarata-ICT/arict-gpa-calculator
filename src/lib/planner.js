@@ -70,12 +70,31 @@ export function buildPlan({ courses, grades, track = "hons", targets = {}, goalL
     : ([...reachable].reverse().find((l) => !currentClass || l.min > currentClass.min) ?? reachable[0] ?? ladder[ladder.length - 1]);
   const goal = ladder.find((l) => l.label === goalLabel && l.status !== "out") ?? defaultGoal;
 
-  const suggested = suggestGrades(remaining, goal, totalCredits, donePoints);
-  const planned = Object.fromEntries(remaining.map((c) => [c.id, targets[c.id] in GRADE_POINTS ? targets[c.id] : suggested[c.id]]));
+  // 1. Initial baseline suggestion when nothing is manually pinned
+  const baselineTarget = goal ? goal.min * totalCredits - donePoints : 0;
+  const suggested = suggestGrades(remaining, baselineTarget);
+
+  // 2. Separate user-pinned targets from unpinned courses that dynamically adapt
+  const isPinned = (c) => Boolean(targets && targets[c.id] in GRADE_POINTS);
+  const pinned = remaining.filter(isPinned);
+  const unpinned = remaining.filter((c) => !isPinned(c));
+
+  // 3. Points committed by past grades and user-pinned targets
+  const pinnedPoints = pinned.reduce((s, c) => s + GRADE_POINTS[targets[c.id]] * c.credits, 0);
+  const neededFromUnpinned = goal ? goal.min * totalCredits - (donePoints + pinnedPoints) : 0;
+
+  // 4. Adapt unpinned courses so the overall target plan is maintained
+  const adapted = suggestGrades(unpinned, neededFromUnpinned);
+
+  // Final planned grades: pinned targets for user-chosen courses, adapted grades for the rest
+  const planned = Object.fromEntries(
+    remaining.map((c) => [c.id, isPinned(c) ? targets[c.id] : (adapted[c.id] ?? suggested[c.id])])
+  );
   const plannedPoints = remaining.reduce((s, c) => s + GRADE_POINTS[planned[c.id]] * c.credits, 0);
   const projected = totalCredits ? truncate2((donePoints + plannedPoints) / totalCredits) : null;
   const projectedClass = projected != null ? CLASSES.find((c) => projected >= c.min) ?? null : null;
-  const edited = remaining.some((c) => targets[c.id] in GRADE_POINTS && targets[c.id] !== suggested[c.id]);
+  const edited = pinned.length > 0;
+  const pinnedIds = new Set(pinned.map((c) => c.id));
 
   return {
     track: t,
@@ -94,15 +113,16 @@ export function buildPlan({ courses, grades, track = "hons", targets = {}, goalL
     projected,
     projectedClass,
     edited,
+    pinnedIds,
   };
 }
 
-// The gentlest plan that reaches the goal: one grade for most courses, a step higher on the
+// The gentlest plan that reaches the target points: one grade for most courses, a step higher on the
 // courses with the most credits (they move the GPA most), never below C.
-function suggestGrades(remaining, goal, totalCredits, donePoints) {
+function suggestGrades(remaining, targetPoints) {
   const out = {};
   if (!remaining.length) return out;
-  const target = goal ? goal.min * totalCredits - donePoints - 1e-9 : 0;
+  const target = Math.max(0, targetPoints - 1e-9);
   const points = (plan) => remaining.reduce((s, c) => s + GRADE_POINTS[PLAN_GRADES[plan[c.id]]] * c.credits, 0);
 
   // Uniform base: the highest grade that does not yet reach the goal (or C if C already does).

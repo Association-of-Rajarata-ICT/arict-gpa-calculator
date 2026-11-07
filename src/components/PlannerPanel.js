@@ -141,8 +141,7 @@ export default function PlannerPanel({ courses, data, actions }) {
               </button>
             )}
             <p className="mt-4 text-[12.5px] leading-relaxed text-muted">
-              The suggestion keeps most courses at one grade and asks a step more of the courses with the most credits, because those move
-              your GPA most. Change any grade to see what happens.
+              When you change any course grade, the remaining courses adapt automatically to maintain your goal. Click &ldquo;Auto&rdquo; to return a course to auto-planning.
             </p>
           </div>
 
@@ -171,7 +170,7 @@ export default function PlannerPanel({ courses, data, actions }) {
                   <ul className="divide-y divide-line border-t border-line">
                     {g.courses.map((c) => {
                       const planned = plan.planned[c.id];
-                      const changed = planned !== plan.suggested[c.id];
+                      const isPinned = plan.pinnedIds?.has(c.id);
                       return (
                         <li key={c.id} className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-0.5 px-4 py-2.5 sm:grid-cols-[5.5rem_1fr_3.5rem_auto]">
                           <span className="col-start-1 row-start-1 font-mono text-[12.5px] font-semibold text-brand">{displayCode(c.code)}</span>
@@ -180,22 +179,22 @@ export default function PlannerPanel({ courses, data, actions }) {
                           </span>
                           <span className="hidden text-right text-[12.5px] text-muted tabular-nums sm:col-start-3 sm:row-start-1 sm:block">{c.credits} cr</span>
                           <span className="col-start-2 row-start-1 flex items-center gap-2 justify-self-end sm:col-start-4">
-                            {changed && (
+                            {isPinned && (
                               <button
                                 type="button"
                                 onClick={() => actions.setTarget(c.id, null)}
-                                title={`Back to the suggested ${plan.suggested[c.id]}`}
-                                className="hidden items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold text-muted hover:bg-mist hover:text-ink sm:inline-flex"
+                                title={`Reset to auto (${plan.suggested[c.id]})`}
+                                className="inline-flex items-center gap-1 rounded-full bg-mist px-2 py-0.5 text-[11px] font-semibold text-muted hover:bg-mist/80 hover:text-ink transition-colors"
                               >
-                                <X className="size-3" aria-hidden /> {plan.suggested[c.id]}
+                                <X className="size-3" aria-hidden /> Auto
                               </button>
                             )}
                             <select
                               value={planned}
                               onChange={(e) => actions.setTarget(c.id, e.target.value)}
                               aria-label={`Target grade for ${displayCode(c.code)} ${c.title}`}
-                              className={`grade-select h-9 w-[5.6rem] rounded-xl border border-dashed pr-7 pl-3 font-display text-[14px] font-bold tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${
-                                changed ? "border-ink bg-ink/[0.04] text-ink" : "border-line-strong bg-surface text-ink"
+                              className={`grade-select h-9 w-[5.6rem] rounded-xl border pr-7 pl-3 font-display text-[14px] font-bold tabular-nums outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand/40 ${
+                                isPinned ? "border-brand bg-brand/[0.04] text-brand border-solid" : "border-line-strong border-dashed bg-surface text-ink"
                               }`}
                             >
                               {TARGET_GRADES.map((t) => (

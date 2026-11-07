@@ -5,6 +5,7 @@ import { DEPARTMENTS } from "@/data/departments";
 import { buildCourses, classFor, computeGpa, computeTerms, countedCourses, formatGpa, getDepartment, latestGradedYear, trackYears, YEARS } from "@/lib/gpa";
 import { EMPTY_DEPT_DATA, EMPTY_STATE, loadState, saveProfile, saveState } from "@/lib/storage";
 import DepartmentPicker from "./DepartmentPicker";
+import EISSection from "./EISSection";
 import SemesterCard from "./SemesterCard";
 import SummaryPanel from "./SummaryPanel";
 import PlannerPanel from "./PlannerPanel";
@@ -141,9 +142,31 @@ export default function Calculator({ intro }) {
 
   return (
     <>
-      <HeroStage anchorId="departments">
+      <HeroStage anchorId="eis-section">
         {intro}
-        <div data-hero="5" className="mt-24 sm:mt-32">
+        <div data-hero="5" className="mt-20 sm:mt-28">
+          {/* Primary 1-Click Option: Auto-fill via EIS */}
+          <EISSection
+            onRestore={actions.importState}
+            selectedDept={dept}
+            data={state.data}
+          />
+
+          {/* Divider: Or enter manually */}
+          <div className="relative my-8 sm:my-10 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center" aria-hidden="true">
+              <div className="w-full border-t border-line/80" />
+            </div>
+            <div className="relative flex items-center gap-2.5 rounded-full border border-line bg-surface/90 px-4 py-1.5 shadow-sm backdrop-blur-md dark:bg-[#111114]">
+              <span className="size-1.5 rounded-full bg-brand" aria-hidden="true" />
+              <span className="text-[12px] font-semibold tracking-wider text-muted uppercase">
+                Or select department & enter manually
+              </span>
+              <span className="size-1.5 rounded-full bg-brand" aria-hidden="true" />
+            </div>
+          </div>
+
+          {/* Manual Entry Option: Department Picker */}
           <DepartmentPicker
             departments={DEPARTMENTS}
             selected={state.dept}

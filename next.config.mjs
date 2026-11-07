@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Fully static: every grade lives in the visitor's browser, so there is no server code.
-  output: "export",
+  // API routes (e.g. /api/eis) require server-side rendering on Vercel.
+  // Static pages are still automatically optimised by Next.js / Vercel.
   images: { unoptimized: true },
 };
 

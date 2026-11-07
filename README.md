@@ -17,7 +17,7 @@ Most GPA calculators require you to type 30+ course grades manually and only tel
 | **5 departments**                      | Biological Sciences, Chemical Sciences, Computing, Health Promotion, Physical Sciences                  |
 | **Auto-detects department & track**    | Automatically identifies your department from your registration number (e.g., `ICT` → Computing)        |
 | **BSc & Honours**                      | 3-year BSc and 4-year BSc Honours — choose per department                                               |
-| **Repeat & Medical Cert (MC) support** | Automatically uses the latest repeat attempt grade and properly parses medical certificate results      |
+| **Repeat & Medical Concession (MC) support** | Automatically uses the latest repeat attempt grade and properly parses medical concession results |
 | **Semester, cumulative & overall GPA** | Follows the FAS Student Handbook 2022/23 grading rules                                                  |
 | **Degree class**                       | First, Second Upper, Second Lower, Pass                                                                 |
 | **Next-class planner**                 | Shows the GPA your remaining courses need; suggests a grade for each; lets you test "what if" changes   |
@@ -37,7 +37,7 @@ Students no longer have to manually select courses or type 30+ grades.
    - **Detects your department** and academic track.
    - **Loads all registered semesters** (including Pre-semesters and repeats).
    - **Resolves repeat attempts** (e.g. `C- C` automatically resolves to the latest grade `C`).
-   - **Handles Medical Certificates** (e.g. `MC B` extracts `B`; pending `MC` remains ungraded).
+   - **Handles Medical Concessions** (e.g. `MC B` extracts `B`; pending `MC` remains ungraded).
    - **Hides courses you did not take**, tailoring the curriculum to your exact enrolment.
    - **Calculates your exact GPA** and prompts your next-class targets.
 

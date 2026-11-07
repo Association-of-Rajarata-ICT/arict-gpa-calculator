@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Download, Eye, EyeOff, Loader2, LogIn, ShieldCheck, X } from "lucide-react";
 import { getLenis } from "@/lib/motion";
 
@@ -15,6 +16,7 @@ import { getLenis } from "@/lib/motion";
  *  - onImport  (data)=>void  called with the EIS response when import succeeds
  */
 export default function EISLoginDialog({ open, onClose, onImport }) {
+  const [mounted, setMounted] = useState(false);
   const [studentId, setStudentId] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -23,14 +25,20 @@ export default function EISLoginDialog({ open, onClose, onImport }) {
   const [stats, setStats] = useState(null); // { totalCourses, gradedCourses }
   const inputRef = useRef(null);
 
-  // Focus the student ID field when the dialog opens
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Reset state and focus the student ID field on desktop only
+  // (on mobile, auto-focus causes virtual keyboard to abruptly jump and push the viewport)
   useEffect(() => {
     if (open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPhase("idle");
       setError("");
       setStats(null);
-      setTimeout(() => inputRef.current?.focus(), 120);
+      if (typeof window !== "undefined" && window.innerWidth >= 640) {
+        setTimeout(() => inputRef.current?.focus(), 120);
+      }
     }
   }, [open]);
 
@@ -100,11 +108,11 @@ export default function EISLoginDialog({ open, onClose, onImport }) {
     }
   }
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 overflow-y-auto"
+      className="fixed inset-0 z-[100] overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-label="Import from EIS"
@@ -277,6 +285,7 @@ export default function EISLoginDialog({ open, onClose, onImport }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -40,7 +40,7 @@ export default function PageMotion() {
             intro.set(el, { autoAlpha: 1 }, at);
             intro.fromTo(words, { yPercent: 110, rotate: 4 }, { yPercent: 0, rotate: 0, duration: 1.2, stagger: 0.06 }, "<");
           } else {
-            intro.fromTo(el, { autoAlpha: 0, y: 26, filter: "blur(6px)" }, { autoAlpha: 1, y: 0, filter: "blur(0px)", clearProps: "filter" }, at);
+            intro.fromTo(el, { autoAlpha: 0, y: 26, filter: "blur(6px)" }, { autoAlpha: 1, y: 0, filter: "blur(0px)", clearProps: "filter,transform" }, at);
           }
         });
 

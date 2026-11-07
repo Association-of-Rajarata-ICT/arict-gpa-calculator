@@ -12,6 +12,9 @@ let lenis = null;
 export function setLenis(instance) {
   lenis = instance;
 }
+export function getLenis() {
+  return lenis;
+}
 
 export function reducedMotion() {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -25,6 +28,7 @@ export const SCROLL_OFFSET = 0;
 export function scrollToId(id) {
   const el = document.getElementById(id);
   if (!el) return;
+  lenis?.resize();
   if (lenis) lenis.scrollTo(el, { offset: SCROLL_OFFSET, duration: 1.2 });
   else el.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth" });
 }
@@ -45,6 +49,7 @@ export function jumpTo(hash) {
 
 // Smooth scroll back to the top, with or without Lenis.
 export function scrollToTop() {
+  lenis?.resize();
   if (lenis) lenis.scrollTo(0, { duration: 1.4 });
   else window.scrollTo({ top: 0, behavior: reducedMotion() ? "auto" : "smooth" });
 }

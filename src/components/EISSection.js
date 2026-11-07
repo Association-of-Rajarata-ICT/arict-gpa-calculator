@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CheckCircle2, ChevronRight, Lock, RefreshCw, User, Zap } from "lucide-react";
 import { buildImportState } from "@/lib/eis";
+import { scrollToId } from "@/lib/motion";
 import EISLoginDialog from "./EISLoginDialog";
 
 /**
@@ -41,6 +42,14 @@ export default function EISSection({ onRestore, selectedDept, data }) {
         type: "error",
         text: err.message || "Failed to process EIS data. Please try again.",
       });
+    }
+  }
+
+  function handleDialogClose(res) {
+    setDialogOpen(false);
+    if (res?.success) {
+      // Scroll to calculator only after modal has closed and body scroll is restored
+      setTimeout(() => scrollToId("calculator"), 120);
     }
   }
 
@@ -137,14 +146,13 @@ export default function EISSection({ onRestore, selectedDept, data }) {
                 </>
               )}
             </button>
-
           </div>
         </div>
       </div>
 
       <EISLoginDialog
         open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
+        onClose={handleDialogClose}
         onImport={handleEISImport}
       />
     </section>

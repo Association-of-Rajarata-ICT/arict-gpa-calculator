@@ -138,7 +138,11 @@ export default function Calculator({ intro }) {
           setConnectedStudent(profile);
         }
       }
-      setTimeout(() => scrollToId("calculator"), 80);
+      // If not from EIS (e.g. file/JSON import), scroll to calculator after render.
+      // EIS imports scroll when the user closes the modal dialog.
+      if (source !== "eis") {
+        setTimeout(() => scrollToId("calculator"), 100);
+      }
     },
   };
 

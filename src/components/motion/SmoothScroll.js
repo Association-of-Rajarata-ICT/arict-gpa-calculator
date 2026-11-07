@@ -14,21 +14,26 @@ export default function SmoothScroll() {
       lerp: 0.1,
       wheelMultiplier: 1,
       anchors: { offset: SCROLL_OFFSET, duration: 1.2 },
-      // Native dialogs and anything marked data-lenis-prevent keep their own scrolling.
-      prevent: (node) => node.nodeName === "DIALOG",
+      // Native dialogs and anything marked data-lenis-prevent or role="dialog" keep their own scrolling.
+      prevent: (node) =>
+        node.nodeName === "DIALOG" ||
+        Boolean(node.closest?.("[data-lenis-prevent], [role='dialog'], .lenis-prevent")),
     });
     setLenis(lenis);
 
     lenis.on("scroll", ScrollTrigger.update);
     const tick = (time) => lenis.raf(time * 1000);
     gsap.ticker.add(tick);
-    gsap.ticker.lagSmoothing(0);
 
-    // The calculator grows and shrinks as departments and years change. Keep trigger positions true.
+    // The calculator grows and shrinks as departments and years change. Keep trigger positions true
+    // and resize Lenis immediately so the scroll limit matches the new content height.
     let timer;
     const ro = new ResizeObserver(() => {
       clearTimeout(timer);
-      timer = setTimeout(() => ScrollTrigger.refresh(), 150);
+      timer = setTimeout(() => {
+        lenis.resize();
+        ScrollTrigger.refresh();
+      }, 100);
     });
     ro.observe(document.body);
 

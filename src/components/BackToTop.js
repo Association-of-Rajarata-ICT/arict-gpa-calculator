@@ -18,7 +18,8 @@ export default function BackToTop() {
       start: 0,
       end: "max",
       onUpdate: (self) => {
-        setShow(self.scroll() > 600);
+        const shouldShow = self.scroll() > 600;
+        setShow((prev) => (prev !== shouldShow ? shouldShow : prev));
         ring.current?.setAttribute("stroke-dashoffset", String(C * (1 - self.progress)));
       },
     });

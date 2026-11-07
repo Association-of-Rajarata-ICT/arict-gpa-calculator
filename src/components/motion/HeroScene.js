@@ -145,7 +145,8 @@ export default function HeroScene({ anchorId }) {
     } catch {
       return; // No WebGL: the CSS glow behind the canvas stays as the fallback.
     }
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+    const isMobile = window.innerWidth < 768;
+    const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.2 : 1.75);
     renderer.setPixelRatio(dpr);
     renderer.setClearColor(0x000000, 0);
     host.appendChild(renderer.domElement);
@@ -189,7 +190,7 @@ export default function HeroScene({ anchorId }) {
       depthWrite: false,
     });
 
-    const sphereGeo = new THREE.SphereGeometry(1, 128, 96);
+    const sphereGeo = new THREE.SphereGeometry(1, isMobile ? 64 : 128, isMobile ? 48 : 96);
     const body = new THREE.Mesh(sphereGeo, bodyMat);
     const glow = new THREE.Mesh(sphereGeo, glowMat);
     planet.add(glow, body);
@@ -197,11 +198,11 @@ export default function HeroScene({ anchorId }) {
     const globe = new THREE.Group();
     planet.add(globe);
     const dotsGeo = new THREE.BufferGeometry();
-    dotsGeo.setAttribute("position", new THREE.BufferAttribute(fibonacciSphere(5200, 1.003), 3));
+    dotsGeo.setAttribute("position", new THREE.BufferAttribute(fibonacciSphere(isMobile ? 2600 : 5200, 1.003), 3));
     const dots = new THREE.Points(dotsGeo, dotsMat);
     globe.add(dots);
 
-    const EMBERS = 90;
+    const EMBERS = isMobile ? 35 : 90;
     const emberPos = new Float32Array(EMBERS * 3);
     const emberSeed = new Float32Array(EMBERS);
     for (let i = 0; i < EMBERS; i++) {
@@ -267,17 +268,19 @@ export default function HeroScene({ anchorId }) {
     const tiltX = gsap.quickTo(tilt, "x", { duration: 1.4, ease: "power3.out" });
     const tiltY = gsap.quickTo(tilt, "y", { duration: 1.4, ease: "power3.out" });
     const onPointer = (e) => {
+      if (e.pointerType === "touch") return;
       tiltX((e.clientX / window.innerWidth - 0.5) * 0.25);
       tiltY((e.clientY / window.innerHeight - 0.5) * 0.12);
     };
     window.addEventListener("pointermove", onPointer, { passive: true });
 
     const scroll = { p: 0 };
+    const setScrollProgress = gsap.quickTo(scroll, "p", { duration: 0.4, ease: "power2.out" });
     const st = ScrollTrigger.create({
       trigger: section,
       start: "top top",
       end: "bottom top",
-      onUpdate: (self) => gsap.to(scroll, { p: self.progress, duration: 0.6, ease: "power2.out", overwrite: true }),
+      onUpdate: (self) => setScrollProgress(self.progress),
     });
 
     // Rise in on load.

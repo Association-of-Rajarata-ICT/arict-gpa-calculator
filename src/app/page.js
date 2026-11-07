@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, Check, FileText, FileUp, GraduationCap, Layers, PencilLine, RotateCcw, ShieldCheck, Target, TrendingUp, UserRound } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Check, FileText, FileUp, GraduationCap, Layers, PencilLine, RotateCcw, ShieldCheck, Target, TrendingUp, UserRound, Zap } from "lucide-react";
 import Footer from "@/components/Footer";
 import HeroStage from "@/components/HeroStage";
 import ReportPreview3D from "@/components/motion/ReportPreview3D";
@@ -272,7 +272,37 @@ function HowItWorks() {
           <p className="font-mono text-xs font-medium tracking-wide text-brand uppercase">How it works</p>
           <h2 className="mt-3 font-display text-3xl font-bold tracking-[-0.03em] text-ink sm:text-4xl">From grades to a plan, in three steps</h2>
         </div>
-        <ol data-reveal-stagger className="mt-10 grid gap-px overflow-hidden rounded-3xl border border-line bg-line md:grid-cols-3">
+
+        {/* EIS Auto-Fill shortcut banner */}
+        <div data-reveal className="mt-10">
+          <Link
+            href="/calculator"
+            className="group relative flex flex-col gap-5 overflow-hidden rounded-3xl border border-brand/40 bg-gradient-to-r from-brand/[0.09] via-surface/90 to-surface p-6 shadow-[0_0_0_1px_rgb(229_72_77/0.06)] transition-all hover:border-brand/60 hover:shadow-[0_16px_40px_-20px_rgb(229_72_77/0.25)] sm:flex-row sm:items-center sm:justify-between sm:p-7 dark:from-brand/[0.14] dark:via-[#111114]/95 dark:to-[#0e0e10]/95"
+          >
+            <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-brand/60 to-transparent" aria-hidden />
+            <div className="flex items-start gap-4 sm:items-center">
+              <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-2xl bg-brand text-white shadow-[0_8px_20px_-8px_rgb(229_72_77/0.6)]">
+                <Zap className="size-5" aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-display text-[17px] font-bold tracking-tight text-ink">
+                    Or skip steps 1 & 2 — Auto-Fill from EiS
+                  </h3>
+                  <span className="rounded-full bg-brand px-2 py-0.5 text-[10.5px] font-bold tracking-wide text-white uppercase">New</span>
+                </div>
+                <p className="mt-1 text-[14px] leading-relaxed text-muted">
+                  Log in with your Rajarata University EIS credentials and every enrolled semester, course, and grade loads in seconds. No typing, no searching.
+                </p>
+              </div>
+            </div>
+            <span className="inline-flex h-10 shrink-0 items-center gap-2 self-start rounded-full border border-brand/50 bg-brand/10 px-4 text-[13px] font-semibold text-brand transition-colors group-hover:bg-brand group-hover:text-white sm:self-center">
+              Try it <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />
+            </span>
+          </Link>
+        </div>
+
+        <ol data-reveal-stagger className="mt-5 grid gap-px overflow-hidden rounded-3xl border border-line bg-line md:grid-cols-3">
           {steps.map((s) => (
             <li key={s.n} className="bg-surface p-6 sm:p-7">
               <div className="flex items-center justify-between">

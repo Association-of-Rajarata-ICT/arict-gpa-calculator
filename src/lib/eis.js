@@ -68,17 +68,28 @@ export function buildImportState(eisData) {
   const catalogueCourses = buildCourses(dept, EMPTY_DEPT_DATA);
   const catalogueByCode = new Map(catalogueCourses.map((c) => [c.code, c]));
 
-  // Collect all courses from EIS
+  // Collect all courses from EIS (if a course appears across multiple semesters, keep the highest grade)
+  const GRADE_ORDER = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "E"];
+  const isHigherGrade = (a, b) => {
+    if (!a) return false;
+    if (!b) return true;
+    return GRADE_ORDER.indexOf(a) < GRADE_ORDER.indexOf(b);
+  };
+
   const eisCourses = new Map(); // code → { code, title, grade, year, semester }
   for (const sem of semesters) {
     for (const c of sem.courses) {
       const code = normalizeCode(c.code);
+      const grade = c.grade && VALID_GRADES.has(c.grade) ? c.grade : null;
+      const existing = eisCourses.get(code);
+
+      const bestGrade = isHigherGrade(grade, existing?.grade) ? grade : (existing?.grade ?? null);
       eisCourses.set(code, {
         code,
         title: c.title,
-        grade: c.grade && VALID_GRADES.has(c.grade) ? c.grade : null,
-        year: sem.year,
-        semester: sem.semester,
+        grade: bestGrade,
+        year: existing?.year ?? sem.year,
+        semester: existing?.semester ?? sem.semester,
       });
     }
   }

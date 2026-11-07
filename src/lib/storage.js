@@ -5,7 +5,7 @@ export const EMPTY_STATE = { version: 1, dept: null, data: {} };
 
 // track is the degree ("bsc" 3 years, "hons" 4 years, null until chosen); goal and targets belong
 // to the next-class planner: the class aimed for and the grades planned for remaining courses.
-export const EMPTY_DEPT_DATA = { grades: {}, moved: {}, hidden: [], custom: [], subjects: null, track: null, goal: null, targets: {} };
+export const EMPTY_DEPT_DATA = { grades: {}, eisGrades: {}, moved: {}, hidden: [], custom: [], subjects: null, track: null, goal: null, targets: {} };
 
 export function loadState() {
   try {
@@ -36,6 +36,7 @@ export function sanitize(input) {
     if (!d || typeof d !== "object") continue;
     data[dept] = {
       grades: isPlainObject(d.grades) ? d.grades : {},
+      eisGrades: isPlainObject(d.eisGrades) ? d.eisGrades : {},
       moved: isPlainObject(d.moved) ? d.moved : {},
       hidden: Array.isArray(d.hidden) ? d.hidden.filter((x) => typeof x === "string") : [],
       custom: Array.isArray(d.custom) ? d.custom.filter((c) => c && typeof c.id === "string") : [],
@@ -52,20 +53,40 @@ function isPlainObject(v) {
   return v !== null && typeof v === "object" && !Array.isArray(v);
 }
 
-// Name and registration number for the PDF report, remembered on this device only.
+// Name and registration number for the PDF report and EIS connection, remembered on this device only.
 const PROFILE_KEY = "arict-gpa:profile";
 
 export function loadProfile() {
   try {
     const p = JSON.parse(window.localStorage.getItem(PROFILE_KEY) || "{}");
-    return { name: typeof p.name === "string" ? p.name : "", regNo: typeof p.regNo === "string" ? p.regNo : "" };
+    return {
+      name: typeof p.name === "string" ? p.name : "",
+      regNo: typeof p.regNo === "string" ? p.regNo : "",
+      isEis: Boolean(p.isEis),
+      lastSync: typeof p.lastSync === "string" ? p.lastSync : null,
+    };
   } catch {
-    return { name: "", regNo: "" };
+    return { name: "", regNo: "", isEis: false, lastSync: null };
   }
 }
 
-export function saveProfile({ name = "", regNo = "" }) {
+export function saveProfile({ name = "", regNo = "", isEis = false, lastSync = null }) {
   try {
-    window.localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, regNo }));
+    const existing = loadProfile();
+    window.localStorage.setItem(
+      PROFILE_KEY,
+      JSON.stringify({
+        name: name || existing.name || "",
+        regNo: regNo || existing.regNo || "",
+        isEis: isEis !== undefined ? isEis : (existing.isEis || false),
+        lastSync: lastSync || existing.lastSync || new Date().toISOString(),
+      })
+    );
+  } catch {}
+}
+
+export function clearProfile() {
+  try {
+    window.localStorage.removeItem(PROFILE_KEY);
   } catch {}
 }

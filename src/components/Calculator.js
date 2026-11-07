@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { DEPARTMENTS } from "@/data/departments";
 import { buildCourses, classFor, computeGpa, computeTerms, countedCourses, formatGpa, getDepartment, latestGradedYear, trackYears, YEARS } from "@/lib/gpa";
-import { EMPTY_DEPT_DATA, EMPTY_STATE, loadState, saveProfile, saveState } from "@/lib/storage";
+import { EMPTY_DEPT_DATA, EMPTY_STATE, loadProfile, loadState, saveProfile, saveState } from "@/lib/storage";
 import DepartmentPicker from "./DepartmentPicker";
 import EISSection from "./EISSection";
 import SemesterCard from "./SemesterCard";
@@ -21,11 +21,20 @@ export default function Calculator({ intro }) {
   const [year, setYear] = useState(1);
   const [connectedStudent, setConnectedStudent] = useState(null);
 
-  // localStorage only exists in the browser, so the saved state loads after hydration.
+  // localStorage only exists in the browser, so the saved state and EIS connection load after hydration.
   useEffect(() => {
     const saved = loadState();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    const profile = loadProfile();
+    if (profile && profile.regNo && profile.isEis && saved.dept && saved.data[saved.dept]) {
+      const currentDeptData = saved.data[saved.dept];
+      if (!currentDeptData.eisGrades || Object.keys(currentDeptData.eisGrades).length === 0) {
+        currentDeptData.eisGrades = { ...(currentDeptData.grades || {}) };
+      }
+    }
     setState(saved);
+    if (profile && profile.regNo && profile.isEis) {
+      setConnectedStudent(profile);
+    }
     setReady(true);
   }, []);
 
@@ -65,6 +74,27 @@ export default function Calculator({ intro }) {
         const grades = { ...d.grades };
         if (grade) grades[id] = grade;
         else delete grades[id];
+        return { ...d, grades };
+      });
+    },
+    resetEisGrade(id) {
+      update((d) => {
+        const grades = { ...d.grades };
+        if (d.eisGrades && id in d.eisGrades) {
+          grades[id] = d.eisGrades[id];
+        }
+        return { ...d, grades };
+      });
+    },
+    resetEisGrades(ids) {
+      update((d) => {
+        const grades = { ...d.grades };
+        const eis = d.eisGrades || {};
+        for (const id of ids) {
+          if (id in eis) {
+            grades[id] = eis[id];
+          }
+        }
         return { ...d, grades };
       });
     },
@@ -133,9 +163,9 @@ export default function Calculator({ intro }) {
       const target = next.dept || state.dept;
       setYear(latestGradedYear(next.data[target] || state.data[target]));
       if (profile && (profile.name || profile.regNo)) {
-        saveProfile(profile);
+        saveProfile({ ...profile, isEis: source === "eis" });
         if (source === "eis") {
-          setConnectedStudent(profile);
+          setConnectedStudent({ ...profile, isEis: true });
         }
       }
       // If not from EIS (e.g. file/JSON import), scroll to calculator after render.
@@ -291,6 +321,7 @@ export default function Calculator({ intro }) {
                       courses={courses.filter((c) => c.year === t.year && c.semester === t.semester)}
                       hidden={hidden}
                       grades={data.grades}
+                      eisGrades={data.eisGrades || {}}
                       actions={actions}
                       existingCodes={existingCodes}
                     />

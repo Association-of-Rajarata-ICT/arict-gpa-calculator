@@ -1,40 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CheckCircle2, ChevronRight, Lock, RefreshCw, User, Zap } from "lucide-react";
 import { buildImportState } from "@/lib/eis";
 import { scrollToId } from "@/lib/motion";
+import { loadProfile } from "@/lib/storage";
 import EISLoginDialog from "./EISLoginDialog";
 
 /**
  * Dedicated EIS Auto-Fill Section
  * Positioned before the Department Picker as the primary, recommended 1-click option.
- *
- * NOTE: We intentionally do NOT load the saved profile from localStorage here.
- * Showing "Connected" from a previous session's import would be misleading —
- * EIS is not actually connected until the user imports in the current session.
- * The connected card is only shown after a successful import this session.
+ * Remembers the connected EIS profile in localStorage so students don't need to re-login every time.
  */
 export default function EISSection({ onRestore, selectedDept, data }) {
   const [dialogOpen, setDialogOpen] = useState(false);
-  // Session-only: set only after a successful EIS import in THIS session.
   const [eisProfile, setEisProfile] = useState(null);
   const [statusMessage, setStatusMessage] = useState(null);
 
-  // Show "Re-sync" only when EIS was actually connected this session AND grades exist.
-  const hasConnectedThisSession = Boolean(eisProfile?.regNo);
-  const currentGradesCount = selectedDept && data[selectedDept.id]
-    ? Object.keys(data[selectedDept.id].grades || {}).length
-    : 0;
+  // Load remembered EIS profile from localStorage on mount
+  useEffect(() => {
+    const p = loadProfile();
+    if (p && p.regNo && p.isEis) {
+      setEisProfile(p);
+    }
+  }, []);
+
+  const hasConnected = Boolean(eisProfile?.regNo);
 
   function handleEISImport(eisData) {
     try {
       const importData = buildImportState(eisData);
       onRestore({ ...importData, source: "eis" });
-      // Store profile in session state (not from localStorage) so the card appears.
       setEisProfile({
         name: eisData.student?.name || "",
         regNo: eisData.student?.regNo || "",
+        isEis: true,
       });
       setStatusMessage(null); // clear any old error; the card is the success indicator
     } catch (err) {
@@ -110,14 +110,14 @@ export default function EISSection({ onRestore, selectedDept, data }) {
               </div>
             )}
 
-            {/* Post-import connected card — only appears after successful import this session */}
-            {eisProfile && (
+            {/* Connected card — shown whenever EIS is connected and stored in this browser */}
+            {eisProfile && eisProfile.regNo && (
               <div className="mt-4 flex items-center gap-3 rounded-xl border border-good/30 bg-good/10 px-4 py-3">
                 <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-good text-white">
                   <User className="size-4" />
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate text-[13px] font-semibold text-ink">{eisProfile.name}</p>
+                  <p className="truncate text-[13px] font-semibold text-ink">{eisProfile.name || "Student"}</p>
                   <p className="font-mono text-[12px] text-muted">{eisProfile.regNo}</p>
                 </div>
                 <span className="ml-auto shrink-0 text-[12px] font-semibold text-good">
@@ -134,7 +134,7 @@ export default function EISSection({ onRestore, selectedDept, data }) {
               onClick={() => setDialogOpen(true)}
               className="group relative inline-flex h-12 items-center justify-center gap-2.5 rounded-2xl bg-brand px-6 font-display text-[15px] font-bold text-white shadow-[0_12px_28px_-8px_rgb(229_72_77/0.5)] transition-all duration-200 hover:scale-[1.02] hover:bg-brand-dark hover:shadow-[0_16px_36px_-8px_rgb(229_72_77/0.65)] active:scale-[0.98]"
             >
-              {hasConnectedThisSession && currentGradesCount > 0 ? (
+              {hasConnected ? (
                 <>
                   <RefreshCw className="size-4.5 transition-transform group-hover:rotate-180 duration-500" />
                   Re-sync from EIS

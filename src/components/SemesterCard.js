@@ -5,7 +5,7 @@ import { ArrowLeftRight, Eye, EyeOff, Plus, RotateCcw, Trash2 } from "lucide-rea
 import { displayCode, formatGpa, GRADES, ROMAN } from "@/lib/gpa";
 import AddCourseForm from "./AddCourseForm";
 
-export default function SemesterCard({ term, courses, hidden, grades, actions, existingCodes }) {
+export default function SemesterCard({ term, courses, hidden, grades, eisGrades = {}, actions, existingCodes }) {
   const [showHidden, setShowHidden] = useState(false);
   const [adding, setAdding] = useState(false);
 
@@ -14,6 +14,10 @@ export default function SemesterCard({ term, courses, hidden, grades, actions, e
   const gradedIds = shown.filter((c) => grades[c.id]).map((c) => c.id);
   const totalCredits = shown.reduce((n, c) => n + (c.nonGpa ? 0 : c.credits), 0);
   const titleId = `term-${term.year}-${term.semester}`;
+
+  const modifiedEisIds = shown
+    .filter((c) => eisGrades[c.id] && grades[c.id] !== eisGrades[c.id])
+    .map((c) => c.id);
 
   return (
     <article aria-labelledby={titleId} className="overflow-hidden rounded-3xl border border-line bg-surface">
@@ -52,7 +56,13 @@ export default function SemesterCard({ term, courses, hidden, grades, actions, e
       ) : (
         <ul className="divide-y divide-line">
           {shown.map((c) => (
-            <CourseRow key={c.id} course={c} grade={grades[c.id] || ""} actions={actions} />
+            <CourseRow
+              key={c.id}
+              course={c}
+              grade={grades[c.id] || ""}
+              eisGrade={eisGrades[c.id] || null}
+              actions={actions}
+            />
           ))}
         </ul>
       )}
@@ -78,6 +88,15 @@ export default function SemesterCard({ term, courses, hidden, grades, actions, e
             className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink hover:text-brand"
           >
             <Plus className="size-4" aria-hidden /> Add course
+          </button>
+        )}
+        {modifiedEisIds.length > 0 && (
+          <button
+            type="button"
+            onClick={() => actions.resetEisGrades(modifiedEisIds)}
+            className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-brand hover:text-brand-dark"
+          >
+            <RotateCcw className="size-3.5" aria-hidden /> Reset {modifiedEisIds.length === 1 ? "grade" : `${modifiedEisIds.length} grades`} to EIS
           </button>
         )}
         {gradedIds.length > 0 && (
@@ -123,9 +142,11 @@ export default function SemesterCard({ term, courses, hidden, grades, actions, e
   );
 }
 
-function CourseRow({ course: c, grade, actions }) {
+function CourseRow({ course: c, grade, eisGrade, actions }) {
   const label = `${displayCode(c.code)} ${c.title}`;
   const other = c.semester === 1 ? "II" : "I";
+  const isEisModified = Boolean(eisGrade && grade !== eisGrade);
+
   return (
     <li className={`group grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 px-5 py-3 transition-colors sm:grid-cols-[6.5rem_1fr_auto_auto] sm:px-6 ${grade ? "" : "hover:bg-mist/50"}`}>
       <span className="col-start-1 row-start-1 font-mono text-[13px] font-semibold text-brand">{displayCode(c.code)}</span>
@@ -159,23 +180,37 @@ function CourseRow({ course: c, grade, actions }) {
         )}
       </div>
 
-      <select
-        value={grade}
-        onChange={(e) => actions.setGrade(c.id, e.target.value)}
-        aria-label={`Grade for ${label}`}
-        className={`grade-select col-start-2 row-start-1 h-10 w-28 rounded-xl border pr-8 pl-3.5 font-display text-[15px] font-bold tabular-nums transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand/40 sm:col-start-4 ${
-          grade
-            ? "border-ink bg-ink text-paper"
-            : "border-line-strong bg-surface text-muted hover:border-ink/40"
-        }`}
-      >
-        <option value="">Grade</option>
-        {GRADES.map((g) => (
-          <option key={g.grade} value={g.grade}>
-            {g.grade}  ·  {g.points.toFixed(1)}
-          </option>
-        ))}
-      </select>
+      <div className="col-start-2 row-start-1 flex items-center justify-end gap-2 sm:col-start-4">
+        {isEisModified && (
+          <button
+            type="button"
+            onClick={() => actions.setGrade(c.id, eisGrade)}
+            title={`Reset to auto-fetched EIS grade (${eisGrade})`}
+            className="inline-flex items-center gap-1 rounded-full bg-brand/10 px-2.5 py-1 text-[11px] font-semibold text-brand hover:bg-brand/20 transition-colors"
+          >
+            <RotateCcw className="size-3" aria-hidden /> Auto ({eisGrade})
+          </button>
+        )}
+        <select
+          value={grade}
+          onChange={(e) => actions.setGrade(c.id, e.target.value)}
+          aria-label={`Grade for ${label}`}
+          className={`grade-select h-10 w-28 rounded-xl border pr-8 pl-3.5 font-display text-[15px] font-bold tabular-nums transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${
+            isEisModified
+              ? "border-brand bg-brand/[0.04] text-brand"
+              : grade
+                ? "border-ink bg-ink text-paper"
+                : "border-line-strong bg-surface text-muted hover:border-ink/40"
+          }`}
+        >
+          <option value="">Grade</option>
+          {GRADES.map((g) => (
+            <option key={g.grade} value={g.grade}>
+              {g.grade}  ·  {g.points.toFixed(1)}
+            </option>
+          ))}
+        </select>
+      </div>
     </li>
   );
 }

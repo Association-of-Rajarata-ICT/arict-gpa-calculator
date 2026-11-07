@@ -160,6 +160,7 @@ export function buildImportState(eisData) {
       data: {
         [deptId]: {
           grades,
+          eisGrades: { ...grades },
           moved,
           hidden,
           custom,

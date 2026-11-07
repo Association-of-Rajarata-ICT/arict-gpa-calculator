@@ -1,46 +1,102 @@
 # ARICT GPA Calculator
 
-A semester and overall GPA calculator for the five departments of the Faculty of Applied Sciences, Rajarata University of Sri Lanka. It is planned for **gpa.arict.lk**.
+> **The free GPA calculator for the Faculty of Applied Sciences, Rajarata University of Sri Lanka.**  
+> Live at **[gpa.arict.lk](https://gpa.arict.lk)**
 
-- **Two pages.** `/` (home) explains what the site does: a hero with a calculator preview, how it works, the next-class planner, the PDF report, the grading system and the FAQ. `/calculator` is the tool itself: department picker, BSc / BSc Honours step, semesters, summary and the next-class planner. Every internal link goes through a page transition (`src/components/motion/PageTransition.js`): a two-layer curtain with the page name, skipped for reduced motion.
-- **Degree step.** After the department, the student chooses BSc (3 years) or BSc Honours (4 years); nothing is assumed until they do. A BSc counts Years 1 to 3 and marks Year 4 "Honours only". The choice is stored per department (`track`).
-- **Next-class planner.** `src/lib/planner.js` works out the average the remaining courses need for each class (GPA cut-offs only), suggests a grade for every remaining course, and lets the student change them (`goal` and `targets` are stored per department). The plan is also printed in the PDF report.
-- Choose a department and its courses load with their credits and GPA status already filled in.
-- Pick a grade for each course to see the semester, cumulative and overall GPA, plus the class band.
-- Applied Sciences students can switch subjects on and off. Anyone can move a course to the other semester, remove courses they aren't taking, or add their own.
-- Everything is saved in the browser's `localStorage` under the key `arict-gpa:v1`. There's no backend and no sign-in.
-- **PDF report.** "Download PDF report" in the summary panel builds an A4 report in the browser (`src/lib/report.js`, using `pdf-lib`). It has the ARICT header, overall GPA and class band, a semester GPA chart, a semester-by-semester table, every graded course, and the grading reference. Before export, a dialog asks for an optional name and registration number (remembered under `arict-gpa:profile`). "Skip and download" leaves them out.
-- **Restore from the PDF.** Each report carries the full saved state as JSON. It's stored twice: under the `ARICTGPABackup` key of the PDF info dictionary, and as an `arict-gpa-backup.json` attachment. "Restore from PDF" (in the department panel and the summary panel) reads either copy and fills the calculator back in. Restoring replaces the departments the file contains and keeps any others. Older JSON backups are still accepted, and the JSON button still exports one. A printed or "Save as PDF" copy has no data, so it can't be restored.
+![ARICT GPA Calculator](docs/social/gpa-flyer-landscape-1920x1080.jpg)
 
-## Data and rules
+---
 
-| What | Where it comes from |
-| --- | --- |
-| Courses, titles, years and semesters | `src/data/courses.js`. This is the same 2026 timetable list papers.arict.lk uses. |
-| Field practicals, projects, training and the FAM stream | `src/data/departments.js` (`HANDBOOK_COURSES`), taken from the FAS Student Handbook 2022/23. The handbook gives no semester for these, so they're marked "Semester not confirmed". |
-| Credits | The second digit of the course code (Handbook §8.6), e.g. ICT 1**4**07 = 4 credits |
-| Non-GPA courses | FDN courses and IDC 1202 (Handbook §8.8). See `NON_GPA_CODES`. |
-| Grade points | A+/A 4.0, A- 3.7, B+ 3.3, B 3.0, B- 2.7, C+ 2.3, C 2.0, C- 1.7, D+ 1.3, D 1.0, E 0.0 (§8.10.2) |
-| GPA | Σ(points × credits) / Σcredits, truncated to two decimals (§8.10.3) |
-| Class bands | First ≥ 3.70, Second Upper ≥ 3.30, Second Lower ≥ 3.00, Pass ≥ 2.00 (§8.11) |
+## What it does
 
-To add or fix a course, edit the two data files. Credits always follow the code.
+Most GPA calculators tell you where you are. This one also shows you **how to get to the next class**.
+
+| Feature                                | Detail                                                                                                 |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **5 departments**                      | Biological Sciences, Chemical Sciences, Computing, Health Promotion, Physical Sciences                 |
+| **BSc & Honours**                      | 3-year BSc and 4-year BSc Honours — choose per department                                              |
+| **Semester, cumulative & overall GPA** | Follows the FAS Student Handbook 2022/23 grading rules                                                 |
+| **Degree class**                       | First, Second Upper, Second Lower, Pass                                                                |
+| **Next-class planner**                 | Shows the GPA your remaining courses need; suggests a grade for each; lets you test "what if" changes  |
+| **PDF report**                         | Exports a designed A4 report; upload it later to restore every grade, even after clearing your browser |
+| **No sign-in**                         | Grades never leave your browser (`localStorage`)                                                       |
+| **Dark & light themes**                | Works on phone and desktop                                                                             |
+
+---
+
+## Architecture
+
+```
+src/
+├── app/                   Next.js App Router pages
+│   ├── page.js            Home — hero, how-it-works, planner overview, FAQ
+│   └── calculator/        /calculator — the full tool
+├── components/
+│   ├── motion/
+│   │   └── PageTransition.js   Two-layer curtain transition (skipped for reduced motion)
+│   └── ...
+├── data/
+│   ├── courses.js         Course list (titles, years, semesters) — same as papers.arict.lk
+│   └── departments.js     Handbook courses (practicals, projects, FAM) from FAS Handbook 2022/23
+└── lib/
+    ├── planner.js         Next-class planner logic
+    └── report.js          PDF report builder (pdf-lib)
+```
+
+**Two pages.**
+
+- `/` — explains the tool: hero with a calculator preview, how it works, the next-class planner, PDF report, grading system and FAQ.
+- `/calculator` — the tool itself: department picker → BSc / BSc Honours step → semester tables → summary → next-class planner.
+
+**Page transitions.** Every internal link triggers a two-layer curtain with the page name (`src/components/motion/PageTransition.js`), skipped for `prefers-reduced-motion`.
+
+**State.** Everything is saved in `localStorage` under the key `arict-gpa:v1`. Optional name and registration number are stored under `arict-gpa:profile`.
+
+---
+
+## Data & grading rules
+
+| What                                | Source                                                                                                   |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Course titles, years, semesters     | `src/data/courses.js` — same 2026 timetable as papers.arict.lk                                           |
+| Practicals, projects, training, FAM | `src/data/departments.js` (`HANDBOOK_COURSES`) — FAS Handbook 2022/23; semester marked "not confirmed"   |
+| Credits                             | Second digit of the course code (Handbook §8.6): e.g. ICT 1**4**07 = 4 credits                           |
+| Non-GPA courses                     | FDN courses and IDC 1202 (Handbook §8.8) — see `NON_GPA_CODES`                                           |
+| Grade points                        | A+/A 4.0 · A− 3.7 · B+ 3.3 · B 3.0 · B− 2.7 · C+ 2.3 · C 2.0 · C− 1.7 · D+ 1.3 · D 1.0 · E 0.0 (§8.10.2) |
+| GPA formula                         | Σ(points × credits) / Σcredits, **truncated** to two decimals (§8.10.3)                                  |
+| Class bands                         | First ≥ 3.70 · Second Upper ≥ 3.30 · Second Lower ≥ 3.00 · Pass ≥ 2.00 (§8.11)                           |
+
+To add or fix a course, edit `src/data/courses.js` and/or `src/data/departments.js`. Credits always follow the course code.
+
+---
+
+## PDF backup & restore
+
+**Export.** "Download PDF report" builds an A4 report in-browser using `pdf-lib`. It includes the ARICT header, overall GPA and class band, a semester GPA chart, a full course table, and the grading reference. The full saved state is embedded as:
+
+- the `ARICTGPABackup` key in the PDF info dictionary, and
+- an `arict-gpa-backup.json` file attachment.
+
+**Restore.** "Restore from PDF" (department panel and summary panel) reads either copy and re-fills the calculator. Restoring replaces only the departments in the file and keeps any others. Older JSON backups are still accepted. A printed or "Save as PDF" copy has no embedded data and cannot be restored.
+
+---
 
 ## Develop
 
 ```bash
 npm install
 npm run dev     # http://localhost:3000
-npm run build   # static export to ./out
+npm run build   # static export → ./out
 ```
 
-## Deploy to gpa.arict.lk (Vercel)
+**Tech stack:** Next.js 16 · React 19 · Tailwind CSS 4 · GSAP · Lenis · pdf-lib · Lucide React
 
-1. Push this folder to its own GitHub repository.
-2. In Vercel, choose **Add New → Project**, import the repository and keep the Next.js preset. The output is a static export, so there are no environment variables to set.
-3. Under **Project → Settings → Domains**, add `gpa.arict.lk`.
-4. At the DNS provider for `arict.lk`, add a record:
-   `CNAME  gpa  cname.vercel-dns.com`
-   (If `arict.lk` already uses Vercel nameservers, Vercel adds this record itself.)
+---
 
-The site is a plain static export (`out/`), so any static host will also work.
+## Disclaimer
+
+This is an **unofficial study aid** built by [ARICT](https://arict.lk) as a student project. Your official results are on the university EIS. Always verify your GPA with your faculty.
+
+---
+
+_Built with ❤️ by the Association of Rajarata Information & Communication Technology (ARICT)_

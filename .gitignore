@@ -51,3 +51,6 @@ next-env.d.ts
 # Promotional video sources, assets, and renders
 /promo/
 content/*
+
+# Documentation and promotional assets
+/docs/

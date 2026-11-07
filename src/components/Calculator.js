@@ -232,6 +232,20 @@ export default function Calculator({ intro }) {
                     />
                   ))}
                 </div>
+
+                {year < trackYears(track) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setYear(year + 1);
+                      scrollToId("calculator");
+                    }}
+                    className="mt-6 mx-auto flex items-center gap-2 rounded-full border border-line-strong bg-surface px-6 py-3 text-[14px] font-semibold text-ink shadow-sm transition-all hover:border-ink/40 hover:bg-mist hover:shadow-md active:scale-[0.98]"
+                  >
+                    Continue to Year {year + 1}
+                    <svg xmlns="http://www.w3.org/2000/svg" className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                  </button>
+                )}
               </div>
 
               {/* On phones the summary sits below every semester, so keep the overall GPA in view. */}

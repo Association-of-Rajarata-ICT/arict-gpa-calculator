@@ -112,12 +112,15 @@ function parseSemesters(html) {
         const title = cells[2].trim();
         let rawGrade = cells.length >= 4 ? cells[3].trim() : "";
 
-        // Strip "MC " (Medical Concession) prefix
-        if (rawGrade.startsWith("MC ")) {
-          rawGrade = rawGrade.substring(3).trim();
-        }
+        // Parse repeat grades and Medical Certificates (MC).
+        // EIS shows repeat grades space-separated (e.g., "C- C" where C is the latest attempt).
+        // "MC" stands for Medical Certificate and is not a grade.
+        // If a student sat with a medical cert (e.g. "MC B"), the grade is B.
+        // If "MC" alone, no grade is released yet (null).
+        const tokens = rawGrade.split(/\s+/).filter((t) => t && t !== "MC");
+        const lastToken = tokens[tokens.length - 1] ?? "";
 
-        // Validate grade — must be one of the known values, else null
+        // Validate — must be one of the known grade values, else null
         const VALID_GRADES = [
           "A+", "A", "A-",
           "B+", "B", "B-",
@@ -125,7 +128,7 @@ function parseSemesters(html) {
           "D+", "D",
           "E",
         ];
-        const grade = VALID_GRADES.includes(rawGrade) ? rawGrade : null;
+        const grade = VALID_GRADES.includes(lastToken) ? lastToken : null;
 
         courses.push({ code, title, grade });
       }

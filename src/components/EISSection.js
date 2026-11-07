@@ -1,26 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { CheckCircle2, ChevronRight, Lock, RefreshCw, Sparkles, Zap } from "lucide-react";
-import { loadProfile } from "@/lib/storage";
+import { useState } from "react";
+import { CheckCircle2, ChevronRight, Lock, RefreshCw, User, Zap } from "lucide-react";
 import { buildImportState } from "@/lib/eis";
 import EISLoginDialog from "./EISLoginDialog";
 
 /**
  * Dedicated EIS Auto-Fill Section
  * Positioned before the Department Picker as the primary, recommended 1-click option.
+ *
+ * NOTE: We intentionally do NOT load the saved profile from localStorage here.
+ * Showing "Connected" from a previous session's import would be misleading —
+ * EIS is not actually connected until the user imports in the current session.
+ * The connected card is only shown after a successful import this session.
  */
 export default function EISSection({ onRestore, selectedDept, data }) {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [profile, setProfile] = useState({ name: "", regNo: "" });
+  // Session-only: set only after a successful EIS import in THIS session.
+  const [eisProfile, setEisProfile] = useState(null);
   const [statusMessage, setStatusMessage] = useState(null);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setProfile(loadProfile());
-  }, []);
-
-  const hasImportedProfile = Boolean(profile.regNo);
+  // Show "Re-sync" only when EIS was actually connected this session AND grades exist.
+  const hasConnectedThisSession = Boolean(eisProfile?.regNo);
   const currentGradesCount = selectedDept && data[selectedDept.id]
     ? Object.keys(data[selectedDept.id].grades || {}).length
     : 0;
@@ -28,15 +29,13 @@ export default function EISSection({ onRestore, selectedDept, data }) {
   function handleEISImport(eisData) {
     try {
       const importData = buildImportState(eisData);
-      onRestore(importData);
-      setProfile({
+      onRestore({ ...importData, source: "eis" });
+      // Store profile in session state (not from localStorage) so the card appears.
+      setEisProfile({
         name: eisData.student?.name || "",
         regNo: eisData.student?.regNo || "",
       });
-      setStatusMessage({
-        type: "success",
-        text: `Successfully imported ${importData.stats?.totalCourses ?? 0} courses (${importData.stats?.gradedCourses ?? 0} with grades) for ${eisData.student?.name || "your account"}!`,
-      });
+      setStatusMessage(null); // clear any old error; the card is the success indicator
     } catch (err) {
       setStatusMessage({
         type: "error",
@@ -64,8 +63,7 @@ export default function EISSection({ onRestore, selectedDept, data }) {
           {/* Left content */}
           <div className="max-w-2xl min-w-0">
             <div className="flex flex-wrap items-center gap-2.5">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/50 bg-brand/20 px-3 py-1 text-[12px] font-bold tracking-wide text-brand uppercase dark:bg-brand/30 dark:text-red-300">
-                <Sparkles className="size-3.5" />
+              <span className="inline-flex items-center rounded-full border border-brand/50 bg-brand/20 px-3 py-1 text-[12px] font-bold tracking-wide text-brand uppercase dark:bg-brand/30 dark:text-red-300">
                 Recommended · Fastest Way
               </span>
               <span className="inline-flex items-center gap-1 text-[12px] font-medium text-muted">
@@ -96,15 +94,26 @@ export default function EISSection({ onRestore, selectedDept, data }) {
               </span>
             </div>
 
-            {statusMessage && (
-              <div
-                className={`mt-4 rounded-xl px-4 py-2.5 text-[13px] font-medium ${
-                  statusMessage.type === "success"
-                    ? "border border-good/30 bg-good/10 text-good dark:text-emerald-400"
-                    : "border border-brand/30 bg-brand/10 text-brand"
-                }`}
-              >
+            {/* Error message (success is shown via the connected card below) */}
+            {statusMessage && statusMessage.type === "error" && (
+              <div className="mt-4 rounded-xl border border-brand/30 bg-brand/10 px-4 py-2.5 text-[13px] font-medium text-brand">
                 {statusMessage.text}
+              </div>
+            )}
+
+            {/* Post-import connected card — only appears after successful import this session */}
+            {eisProfile && (
+              <div className="mt-4 flex items-center gap-3 rounded-xl border border-good/30 bg-good/10 px-4 py-3">
+                <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-good text-white">
+                  <User className="size-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-[13px] font-semibold text-ink">{eisProfile.name}</p>
+                  <p className="font-mono text-[12px] text-muted">{eisProfile.regNo}</p>
+                </div>
+                <span className="ml-auto shrink-0 text-[12px] font-semibold text-good">
+                  EiS Connected ✓
+                </span>
               </div>
             )}
           </div>
@@ -116,26 +125,19 @@ export default function EISSection({ onRestore, selectedDept, data }) {
               onClick={() => setDialogOpen(true)}
               className="group relative inline-flex h-12 items-center justify-center gap-2.5 rounded-2xl bg-brand px-6 font-display text-[15px] font-bold text-white shadow-[0_12px_28px_-8px_rgb(229_72_77/0.5)] transition-all duration-200 hover:scale-[1.02] hover:bg-brand-dark hover:shadow-[0_16px_36px_-8px_rgb(229_72_77/0.65)] active:scale-[0.98]"
             >
-              {hasImportedProfile && currentGradesCount > 0 ? (
+              {hasConnectedThisSession && currentGradesCount > 0 ? (
                 <>
                   <RefreshCw className="size-4.5 transition-transform group-hover:rotate-180 duration-500" />
                   Re-sync from EIS
                 </>
               ) : (
                 <>
-                  <Sparkles className="size-4.5" />
                   Import from EIS
                   <ChevronRight className="size-4 transition-transform group-hover:translate-x-1" />
                 </>
               )}
             </button>
 
-            {hasImportedProfile && (
-              <p className="text-[12px] text-muted text-center lg:text-right">
-                Connected: <strong className="font-mono text-ink">{profile.regNo}</strong>
-                {profile.name && ` (${profile.name.split(" ").slice(-1)[0]})`}
-              </p>
-            )}
           </div>
         </div>
       </div>

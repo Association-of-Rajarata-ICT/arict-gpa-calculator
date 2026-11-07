@@ -13,11 +13,13 @@ import DegreeStep from "./DegreeStep";
 import CourseGuide from "./CourseGuide";
 import HeroStage from "./HeroStage";
 import { scrollToId } from "@/lib/motion";
+import { CheckCircle2 } from "lucide-react";
 
 export default function Calculator({ intro }) {
   const [state, setState] = useState(EMPTY_STATE);
   const [ready, setReady] = useState(false);
   const [year, setYear] = useState(1);
+  const [connectedStudent, setConnectedStudent] = useState(null);
 
   // localStorage only exists in the browser, so the saved state loads after hydration.
   useEffect(() => {
@@ -126,11 +128,16 @@ export default function Calculator({ intro }) {
       });
     },
     // A restored report or backup replaces the departments it contains and keeps any others.
-    importState({ state: next, profile }) {
+    importState({ state: next, profile, source }) {
       setState((s) => ({ version: 1, dept: next.dept || s.dept, data: { ...s.data, ...next.data } }));
       const target = next.dept || state.dept;
       setYear(latestGradedYear(next.data[target] || state.data[target]));
-      if (profile && (profile.name || profile.regNo)) saveProfile(profile);
+      if (profile && (profile.name || profile.regNo)) {
+        saveProfile(profile);
+        if (source === "eis") {
+          setConnectedStudent(profile);
+        }
+      }
       setTimeout(() => scrollToId("calculator"), 80);
     },
   };
@@ -196,6 +203,36 @@ export default function Calculator({ intro }) {
                   </div>
                   <YearTabs year={year} onChange={setYear} terms={allTerms} track={track} />
                 </div>
+
+                {connectedStudent && (
+                  <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-good/35 bg-good/[0.08] p-3.5 sm:px-4.5 dark:bg-good/[0.12]">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-good text-white shadow-sm">
+                        <CheckCircle2 className="size-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-good">
+                            EiS Connected
+                          </span>
+                          <span className="size-1 rounded-full bg-good/60" />
+                          <span className="font-mono text-[11.5px] font-semibold text-ink">
+                            {connectedStudent.regNo}
+                          </span>
+                        </div>
+                        {connectedStudent.name && (
+                          <p className="truncate text-[13.5px] font-semibold text-ink">
+                            {connectedStudent.name}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-good/30 bg-good/15 px-3 py-1 text-[11.5px] font-semibold text-good">
+                      <span className="size-1.5 rounded-full bg-good animate-pulse" />
+                      Auto-filled
+                    </span>
+                  </div>
+                )}
 
                 {dept.subjects.length > 1 && (
                   <div className="mt-5 flex flex-wrap items-center gap-2">

@@ -1,5 +1,6 @@
 import { Instrument_Serif, Inter, JetBrains_Mono, Manrope } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { DESCRIPTION, KEYWORDS, ORG, SHARE_DESCRIPTION, SHARE_TITLE, SITE_NAME, SITE_URL, TITLE } from "@/lib/site";
 import BackToTop from "@/components/BackToTop";
 import Header from "@/components/Header";
@@ -54,6 +55,7 @@ export default function RootLayout({ children }) {
         <BackToTop />
         <PageTransition />
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

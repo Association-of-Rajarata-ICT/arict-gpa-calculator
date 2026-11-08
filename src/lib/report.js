@@ -15,6 +15,7 @@ import {
   GRADES,
   nextClass,
   ROMAN,
+  customOrigin,
   trackYears,
   YEARS,
 } from "@/lib/gpa";
@@ -676,7 +677,7 @@ export async function createReport(state, { name = "", regNo = "" } = {}) {
     for (const c of done) {
       const g = grades[c.id];
       const counts = !(c.nonGpa || c.credits <= 0);
-      const tags = [c.nonGpa ? "Non-GPA" : null, c.custom ? "Added by you" : null].filter(Boolean).join(" · ");
+      const tags = [c.nonGpa ? "Non-GPA" : null, customOrigin(c)].filter(Boolean).join(" · ");
       const lines = wrap(c.title || "Untitled course", { size: 8.6 }, cc.titleW);
       const rowH = lines.length * 11 + (tags ? 10 : 0) + 9;
       ensure(rowH, () => {

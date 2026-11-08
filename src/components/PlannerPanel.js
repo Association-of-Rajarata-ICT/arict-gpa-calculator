@@ -67,7 +67,9 @@ export default function PlannerPanel({ courses, data, actions }) {
         {ladder.map((l) => {
           const selected = goal?.label === l.label;
           const here = plan.currentClass?.label === l.label;
-          const disabled = l.status === "out" || l.status === "missed";
+          // Classes the student has already reached can't be a goal while a higher one is within reach.
+          const reached = plan.currentClass != null && l.min <= plan.currentClass.min && goal != null && goal.min > plan.currentClass.min;
+          const disabled = l.status === "out" || l.status === "missed" || reached;
           return (
             <button
               key={l.label}

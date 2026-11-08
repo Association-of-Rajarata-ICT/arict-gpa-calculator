@@ -68,7 +68,10 @@ export function buildPlan({ courses, grades, track = "hons", targets = {}, goalL
   const defaultGoal = !doneCredits
     ? ladder[0]
     : ([...reachable].reverse().find((l) => !currentClass || l.min > currentClass.min) ?? reachable[0] ?? ladder[ladder.length - 1]);
-  const goal = ladder.find((l) => l.label === goalLabel && l.status !== "out") ?? defaultGoal;
+  // A saved goal only counts while it is still ahead of the student: once their GPA reaches that class
+  // (or passes it), the goal moves on to the next one up instead of repeating "Now".
+  const stale = (l) => currentClass != null && l.min <= currentClass.min && defaultGoal && defaultGoal.min > currentClass.min;
+  const goal = ladder.find((l) => l.label === goalLabel && l.status !== "out" && !stale(l)) ?? defaultGoal;
 
   // 1. Initial baseline suggestion when nothing is manually pinned
   const baselineTarget = goal ? goal.min * totalCredits - donePoints : 0;

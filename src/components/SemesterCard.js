@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ArrowLeftRight, Eye, EyeOff, Plus, RotateCcw, Trash2 } from "lucide-react";
-import { displayCode, formatGpa, GRADES, ROMAN } from "@/lib/gpa";
+import { customOrigin, displayCode, formatGpa, GRADES, ROMAN } from "@/lib/gpa";
 import AddCourseForm from "./AddCourseForm";
 
 export default function SemesterCard({ term, courses, hidden, grades, eisGrades = {}, actions, existingCodes }) {
@@ -156,7 +156,7 @@ function CourseRow({ course: c, grade, eisGrade, actions }) {
         <div className="mt-1 flex flex-wrap items-center gap-1.5">
           <Tag>{c.credits} {c.credits === 1 ? "credit" : "credits"}</Tag>
           {c.nonGpa ? <Tag tone="warn">Non-GPA</Tag> : <Tag tone="good">GPA</Tag>}
-          {c.custom && <Tag>Added by you</Tag>}
+          {c.custom && <Tag>{customOrigin(c)}</Tag>}
           {c.estimated && !c.custom && (
             <span className="text-[11px] text-muted" title="The handbook lists this course for the year but not the semester. Move it if yours differs.">
               Semester not confirmed

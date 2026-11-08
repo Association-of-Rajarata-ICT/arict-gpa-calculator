@@ -88,8 +88,16 @@ function toCourse(c, extra = {}) {
     credits: extra.credits ?? creditsFor(c.code),
     nonGpa,
     custom: Boolean(extra.custom),
+    // Courses the EIS import added (ids "eis-<code>") came from the EIS, not from the student.
+    fromEis: Boolean(extra.custom) && String(extra.id || "").startsWith("eis-"),
     id: extra.id || c.code,
   };
+}
+
+/** The label for a course the student can delete: where it came from. */
+export function customOrigin(course) {
+  if (!course.custom) return null;
+  return course.fromEis ? "Added from EIS" : "Added by you";
 }
 
 /**

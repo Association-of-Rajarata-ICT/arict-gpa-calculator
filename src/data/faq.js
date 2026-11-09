@@ -33,4 +33,8 @@ export const FAQ = [
     q: "Is this an official calculator?",
     a: "No. It is an unofficial tool made by ARICT, the student association for Information and Communication Technology at Rajarata University. Your official results are on the EIS.",
   },
+  {
+    q: "Do you store my grades or EIS login credentials?",
+    a: "No. We do not store your grades or EIS credentials on any server or database. Your grades are saved strictly on your own device in your browser's local storage. When you use the EIS import feature, your login credentials are used in-memory solely to retrieve your results from the university portal and log out immediately—they are never saved, logged, or stored anywhere.",
+  },
 ];

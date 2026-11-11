@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeftRight, Eye, EyeOff, Plus, RotateCcw, Trash2 } from "lucide-react";
-import { customOrigin, displayCode, formatGpa, GRADES, ROMAN } from "@/lib/gpa";
+import { ArrowLeftRight, Eye, TriangleAlert, EyeOff, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { customOrigin, displayCode, earnsCredit, formatGpa, GRADES, ROMAN } from "@/lib/gpa";
 import AddCourseForm from "./AddCourseForm";
 
 export default function SemesterCard({ term, courses, hidden, grades, eisGrades = {}, actions, existingCodes }) {
@@ -32,9 +32,11 @@ export default function SemesterCard({ term, courses, hidden, grades, eisGrades 
         </div>
         <dl className="flex items-center gap-5 text-right">
           <div>
-            <dt className="text-[11px] font-medium text-muted">Credits</dt>
+            <dt className="text-[11px] font-medium text-muted" title="Credits earned with a grade of C or better. Grades below C earn no credit.">
+              Credits earned
+            </dt>
             <dd className="font-display text-base font-bold text-ink tabular-nums">
-              {term.credits}
+              {term.earned}
               <span className="text-muted">/{totalCredits}</span>
             </dd>
           </div>
@@ -50,6 +52,17 @@ export default function SemesterCard({ term, courses, hidden, grades, eisGrades 
           </div>
         </dl>
       </header>
+
+      {term.below > 0 && (
+        <p role="note" className="flex items-start gap-2 border-b border-line bg-brand-soft px-5 py-2.5 text-[12.5px] leading-snug text-body sm:px-6">
+          <TriangleAlert className="mt-0.5 size-3.5 shrink-0 text-brand" aria-hidden />
+          <span>
+            {term.below === 1 ? "1 course is" : `${term.below} courses are`} below C and {term.below === 1 ? "earns" : "earn"} no credit
+            {term.failed ? ` (${term.failed === 1 ? "an E is a fail" : `${term.failed} are E, a fail`})` : ""}. They still count in your GPA. You may re-sit; the
+            best grade on a re-sit is capped at C.
+          </span>
+        </p>
+      )}
 
       {shown.length === 0 ? (
         <p className="px-6 py-8 text-center text-sm text-muted">No courses in this semester. Add one below if you took it.</p>
@@ -156,6 +169,7 @@ function CourseRow({ course: c, grade, eisGrade, actions }) {
         <div className="mt-1 flex flex-wrap items-center gap-1.5">
           <Tag>{c.credits} {c.credits === 1 ? "credit" : "credits"}</Tag>
           {c.nonGpa ? <Tag tone="warn">Non-GPA</Tag> : <Tag tone="good">GPA</Tag>}
+          {!c.nonGpa && grade && !earnsCredit(grade) && <Tag tone="warn">{grade === "E" ? "Fail: no credit" : "Below C: no credit"}</Tag>}
           {c.custom && <Tag>{customOrigin(c)}</Tag>}
           {c.estimated && !c.custom && (
             <span className="text-[11px] text-muted" title="The handbook lists this course for the year but not the semester. Move it if yours differs.">

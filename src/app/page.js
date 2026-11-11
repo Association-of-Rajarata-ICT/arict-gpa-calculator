@@ -568,6 +568,10 @@ function Grading() {
               <li>
                 <b className="text-ink">Truncated,</b> not rounded, to two decimals, as the handbook does.
               </li>
+              <li>
+                <b className="text-ink">Credit is earned with C or better.</b> A grade below C (an E included) still counts in the GPA but earns
+                no credit. You may re-sit, and the best grade on a re-sit is C.
+              </li>
             </ul>
           </div>
 

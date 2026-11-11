@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Braces, FileDown, HardDrive, RotateCcw, Upload } from "lucide-react";
-import { classFor, formatGpa, nextClass, ROMAN } from "@/lib/gpa";
+import { Braces, FileDown, HardDrive, Hourglass, RotateCcw, TriangleAlert, Upload } from "lucide-react";
+import { classFor, firstIncompleteTerm, formatGpa, nextClass, ROMAN } from "@/lib/gpa";
+import { TRACKS } from "@/lib/planner";
 import { createReport, downloadBytes } from "@/lib/report";
 import ExportDialog from "./ExportDialog";
 import RestoreButton from "./RestoreButton";
 import AnimatedNumber from "./motion/AnimatedNumber";
 
-export default function SummaryPanel({ dept, overall, terms, onJump, state, actions }) {
+export default function SummaryPanel({ dept, overall, terms, onJump, state, actions, track }) {
+  const progress = firstIncompleteTerm(terms);
   const [confirmReset, setConfirmReset] = useState(false);
   const [message, setMessage] = useState(null);
   const [exporting, setExporting] = useState(false);
@@ -43,15 +45,34 @@ export default function SummaryPanel({ dept, overall, terms, onJump, state, acti
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             {band ? (
-              <span className="inline-flex h-7 items-center rounded-full bg-white px-3 text-[12.5px] font-bold text-[#0b0b0b]">{band.label}</span>
+              <span className="inline-flex h-7 items-center rounded-full bg-white px-3 text-[12.5px] font-bold text-[#0b0b0b]">
+                {progress ? `${band.label} so far` : band.label}
+              </span>
             ) : (
               <span className="text-[13px] text-white/55">Enter a grade to see your GPA.</span>
             )}
             {next && <span className="text-[12.5px] text-white/60">{next.gap.toFixed(2)} to {next.label}</span>}
           </div>
+          {band && progress && (
+            <p className="mt-3 flex items-start gap-2 rounded-xl bg-white/[0.07] px-3 py-2 text-[12.5px] leading-snug text-white/75">
+              <Hourglass className="mt-0.5 size-3.5 shrink-0 text-[#ff6b6e]" aria-hidden />
+              <span>
+                Year {progress.year} · Semester {ROMAN[progress.semester]} not completed. Your class is final only when every course has a grade.
+              </span>
+            </p>
+          )}
+          {overall.below > 0 && (
+            <p className="mt-2 flex items-start gap-2 rounded-xl bg-[#e5484d]/15 px-3 py-2 text-[12.5px] leading-snug text-white/80">
+              <TriangleAlert className="mt-0.5 size-3.5 shrink-0 text-[#ff6b6e]" aria-hidden />
+              <span>
+                {overall.below} {overall.below === 1 ? "course" : "courses"} below C, no credit earned. Re-sit to earn it (capped at C).
+              </span>
+            </p>
+          )}
 
-          <dl className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-2xl bg-white/10">
+          <dl className="mt-6 grid grid-cols-3 gap-px overflow-hidden rounded-2xl bg-white/10">
             <Stat label="GPA credits" value={overall.credits} />
+            <Stat label="Credits earned" value={overall.earned} sub={track ? `of ${TRACKS[track].credits}` : null} />
             <Stat label="Courses graded" value={overall.graded} />
           </dl>
         </div>
@@ -157,11 +178,14 @@ export default function SummaryPanel({ dept, overall, terms, onJump, state, acti
   );
 }
 
-function Stat({ label, value }) {
+function Stat({ label, value, sub }) {
   return (
-    <div className="bg-[#0b0b0b] px-4 py-3 dark:bg-surface">
-      <dt className="text-[11.5px] text-white/50">{label}</dt>
-      <dd className="mt-0.5 font-display text-xl font-bold tabular-nums">{value}</dd>
+    <div className="bg-[#0b0b0b] px-3.5 py-3 dark:bg-surface">
+      <dt className="text-[11px] text-white/50">{label}</dt>
+      <dd className="mt-0.5 font-display text-xl font-bold tabular-nums">
+        {value}
+        {sub && <span className="ml-1 text-[11px] font-medium text-white/45">{sub}</span>}
+      </dd>
     </div>
   );
 }

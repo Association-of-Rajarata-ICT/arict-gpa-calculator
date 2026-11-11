@@ -8,6 +8,7 @@ import {
   computeGpa,
   computeTerms,
   countedCourses,
+  firstIncompleteTerm,
   displayCode,
   formatGpa,
   getDepartment,
@@ -259,20 +260,27 @@ export async function createReport(state, { name = "", regNo = "" } = {}) {
   rrect(M + 18, y + 94, barW, 5, 2.5, { color: C.white, opacity: 0.12 });
   if (overall.gpa) rrect(M + 18, y + 94, Math.max(5, (barW * overall.gpa) / 4), 5, 2.5, { color: C.bright });
   if (band) {
-    const pillW = width(band.label, { size: 8.5, bold: true }) + 18;
+    const pillLabel = firstIncompleteTerm(terms) ? `${band.label} so far` : band.label;
+    const pillW = width(pillLabel, { size: 8.5, bold: true }) + 18;
     rrect(M + 18, y + 110, pillW, 19, 9.5, { color: C.white });
-    text(band.label, M + 27, y + 123, { size: 8.5, bold: true, color: C.ink });
+    text(pillLabel, M + 27, y + 123, { size: 8.5, bold: true, color: C.ink });
     if (next) text(`${next.gap.toFixed(2)} to ${next.label}`, M + 26 + pillW, y + 123, { size: 8, color: C.white, opacity: 0.6 });
   } else {
     text("No grades entered yet.", M + 18, y + 123, { size: 9, color: C.white, opacity: 0.6 });
   }
-  text("Truncated to two decimals, as the handbook does.", M + 18, y + 143, { size: 6.8, color: C.white, opacity: 0.38 });
+  const open = firstIncompleteTerm(terms);
+  text(
+    open ? `Year ${open.year} · Semester ${ROMAN[open.semester]} not completed, so this class is provisional.` : "Truncated to two decimals, as the handbook does.",
+    M + 18,
+    y + 143,
+    { size: 6.8, color: C.white, opacity: open ? 0.6 : 0.38 },
+  );
 
   const graded = terms.filter((t) => t.gpa != null);
   const best = graded.reduce((b, t) => (!b || t.gpa > b.gpa ? t : b), null);
   const nonGpaGraded = active.filter((c) => grades[c.id] && (c.nonGpa || c.credits <= 0)).length;
   const tiles = [
-    ["GPA CREDITS", String(overall.credits), "Counted in your GPA"],
+    ["CREDITS EARNED", String(overall.earned), `${overall.credits} count in GPA · C or better`],
     ["COURSES GRADED", String(overall.graded), nonGpaGraded ? `Includes ${nonGpaGraded} non-GPA` : `Of ${active.length} listed`],
     ["BEST SEMESTER", best ? formatGpa(best.gpa) : "—", best ? `Year ${best.year} · Semester ${ROMAN[best.semester]}` : "No semester graded yet"],
     ["SEMESTERS", `${graded.length} / ${terms.length}`, data.track === "bsc" ? "Of a 3-year BSc" : "With at least one grade"],

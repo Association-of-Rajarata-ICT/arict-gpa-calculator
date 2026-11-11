@@ -367,6 +367,7 @@ export default function Calculator({ intro }) {
                 }}
                 state={state}
                 actions={actions}
+                track={track}
               />
             </div>
             <PlannerPanel courses={active} data={data} actions={actions} />

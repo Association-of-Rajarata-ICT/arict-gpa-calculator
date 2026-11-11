@@ -10,6 +10,14 @@ export const FAQ = [
     a: "Pick your department, enter your grades, and open the next-class planner below your semesters. Choose BSc (3 years) or BSc Honours (4 years). It shows the average your remaining courses need for First Class (3.70), Second Upper (3.30), Second Lower (3.00) and Pass (2.00), suggests a grade for each remaining course, and lets you change any of them to see your projected final GPA. It uses the GPA cut-offs only; classes also need minimum grades in the handbook.",
   },
   {
+    q: "Does a grade below C or an E still count?",
+    a: "In the GPA, yes: every graded course counts, and an E counts as 0.0 (the handbook's own worked example includes one). But credit is earned only with a grade of C or better. A grade below C is a referred result: you may re-sit, and the best grade you can get on a re-sit is C. Degree and class rules count credits with C or better, so the calculator shows Credits earned separately from GPA credits.",
+  },
+  {
+    q: "Why does my class say \"so far\"?",
+    a: "Your class is only final once every course has a grade. Until then the calculator shows the class your GPA gives right now, with the first semester that is not completed, for example Year 3 Semester I.",
+  },
+  {
     q: "How many credits is a course worth?",
     a: "The second digit of the course code is its credit value. ICT 1407 is a 4-credit course and ICT 1201 is a 2-credit course. Foundation (FDN) courses and IDC 1202 Career Development carry zero credits and are not counted in the GPA.",
   },

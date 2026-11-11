@@ -124,21 +124,52 @@ export function buildCourses(dept, data) {
   return courses;
 }
 
-/** Credit-weighted mean, truncated to two decimals without rounding (Handbook §8.10.3). */
+// A grade below C is "referred": the student may re-sit, and the best grade on a re-sit is capped at C
+// (Handbook §8.10.5). Class and degree criteria count credits with C or better (§8.11), so credit is
+// "earned" from C up. The GPA still includes every graded course, an E included (§8.10.3 worked example).
+export const EARN_MIN_POINTS = 2.0;
+
+export function earnsCredit(grade) {
+  return grade in GRADE_POINTS && GRADE_POINTS[grade] >= EARN_MIN_POINTS;
+}
+
+/**
+ * Credit-weighted mean, truncated to two decimals without rounding (Handbook §8.10.3).
+ * `credits` counts every graded GPA course; `earned` only those with C or better; `below` is how many
+ * graded GPA courses sit below C (`failed` of those are E); `pending` is GPA courses with no grade yet.
+ */
 export function computeGpa(courses, grades) {
   let credits = 0;
   let points = 0;
   let graded = 0;
+  let earned = 0;
+  let below = 0;
+  let failed = 0;
+  let pending = 0;
   for (const c of courses) {
+    const counts = !c.nonGpa && c.credits > 0;
     const g = grades[c.id];
-    if (!g || !(g in GRADE_POINTS)) continue;
+    if (!g || !(g in GRADE_POINTS)) {
+      if (counts) pending += 1;
+      continue;
+    }
     graded += 1;
-    if (c.nonGpa || c.credits <= 0) continue;
+    if (!counts) continue;
     credits += c.credits;
     points += GRADE_POINTS[g] * c.credits;
+    if (earnsCredit(g)) earned += c.credits;
+    else {
+      below += 1;
+      if (g === "E") failed += 1;
+    }
   }
   const gpa = credits > 0 ? truncate2(points / credits) : null;
-  return { gpa, credits, points, graded };
+  return { gpa, credits, points, graded, earned, below, failed, pending };
+}
+
+/** The first semester that still has GPA courses without a grade, or null when every semester is done. */
+export function firstIncompleteTerm(terms) {
+  return terms.find((t) => t.pending > 0) ?? null;
 }
 
 export function truncate2(n) {
